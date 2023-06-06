@@ -1,0 +1,13 @@
+*.csv
+*.Rhistory
+*.DS_Store
+*.fasta
+*.txt
+*.ndb
+*.nhr
+*.nin
+*.not
+*.nsq
+*.ntf
+*.nto
+*.blast
