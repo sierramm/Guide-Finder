@@ -7,6 +7,7 @@ output:
 
 This program is capable of designing guides targeted to any number of genes in a bacterial genome. For complete genomes, input the GenBank accession number and fasta file. For draft genomes, input the coding sequence coordinates (identified using pre-processing scripts) and fasta file.  Set parameters for guide design, as indicated below. The program will identify genes that did not produce guides and will re-run them with lowered parameters if desired (see "OPTIONAL:" below).  
 
+##
 ##1.Set Working Directory
 The working directory should be where your FASTA file nis stored & where all files will output to 
 
