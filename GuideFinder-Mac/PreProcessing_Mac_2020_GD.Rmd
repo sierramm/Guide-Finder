@@ -3,7 +3,7 @@ title: "PreProcessing"
 output: pdf_document
 ---
 
-## 
+
 ##1.Set Working Directory
 The working directory should be where your draft genome sequence (in fasta format)
 
