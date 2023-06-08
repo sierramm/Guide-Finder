@@ -9,7 +9,7 @@ This program is capable of designing guides targeted to any number of genes in a
 
 ##
 ##1.Set Working Directory
-The working directory should be where your FASTA file nis stored & where all files will output to 
+The working directory should be where your FASTA file is stored & where all files will output to 
 
 ```{r setup}
 knitr::opts_knit$set(root.dir = '/Users/spotom/Desktop/GF_test/strep')
@@ -56,7 +56,7 @@ suppressPackageStartupMessages(library(stringi))
 ```
 
 __Lists functions that will be used during guide design__
-No edits need to be made to this section; this chuck justs lists the functions that are used later in the script
+No edits need to be made to this section; this chunk just lists the functions that are used later in the script
 ```{r,tidy=TRUE}
 
 #function to test if GC of guide meets threshold 
