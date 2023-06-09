@@ -12,8 +12,10 @@ This program is capable of designing guides targeted to any number of genes in a
 The working directory should be where your FASTA file is stored & where all files will output to 
 
 ```{r setup}
-knitr::opts_knit$set(root.dir = '/Users/spotom/Desktop/GF_test/strep')
-setwd ('/Users/spotom/Desktop/GF_test/strep')
+#install.packages("knitr")
+
+knitr::opts_knit$set(root.dir = '/Users/mellos/Documents/GitHub/Guide-Finder/GuideFinder-Mac/Examples')
+setwd ('/Users/mellos/Documents/GitHub/Guide-Finder/GuideFinder-Mac/Examples')
 ```
 
 
@@ -24,7 +26,7 @@ These packages need only to be installed once
 # installing version 3.10 
 if (!requireNamespace("BiocManager", quietly = TRUE))
     install.packages("BiocManager")
-BiocManager::install(version = "3.10")
+BiocManager::install(version = "3.16")
 
 # installing packages from Bioconductor 
 BiocManager::install(c("Biostrings", "genbankr","annotate","stringr","data.table","seqinr","ape","refGenome","rentrez","reshape2","dplyr","purrr","stringi"))
@@ -33,6 +35,12 @@ options(max.print=999999)
 
 ```
 
+had to download an rchived version of refgenome: https://cran.r-project.org/src/contrib/Archive/refGenome/
+
+```{r}
+install.packages("doBy")
+install.packages("~/Downloads/refGenome_1.7.7.tar.gz", repos = NULL, type = "source")
+```
 
 __Loading Packages__
 Packages need to be loaded each time the program is run 
