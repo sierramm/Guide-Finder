@@ -77,7 +77,7 @@ L_CheckTheGC<- function(x) {
 FindCC<-function (Sequences) 
 {str_locate_all(Sequences,"CC")}
 
-#function to find PAM site (promotor sequence only)
+#function to find PAM site (promoter sequence only)
 FindGG<-function (Sequences) 
 {str_locate_all(Sequences,"GG")}
 
@@ -275,7 +275,7 @@ CompleteGenome<- TRUE
 Input GenBank Accession Number. Will retrieve the annotated genome from GenBank (called by accession #, e.g.AE015929.1 for *Staphylococcus epidermidis*).   
 From the annotated file, will retrieve the coding sequence information.  
 *If using a draft genome, do not run this chunk of code.*  
-__Example__: Subsitute the bolded information for the GenBank Acession # for your genome of interest.   
+__Example__: Substitute the bolded information for the GenBank Accession # for your genome of interest.   
 GenBankInfo<- readGenBank(GBAccession( __"AE014133.2"__ ))   
 ```{r,tidy=TRUE}
 #retrieves annotation from GenBank, called by accession
@@ -285,9 +285,9 @@ CDSInfoDF<-data.frame(attr(GenBankInfo, "cds"))
 ```
 
 ##5B.FOR DRAFT GENOMES ONLY: 
-Input pre-processed input file (cotaining product/gene name, strand type, and start/end coordinates)
+Input pre-processed input file (containing product/gene name, strand type, and start/end coordinates)
 This loop takes the gene coordinates and modifies them to include the putative promoter region 
-__Example__: Subsitute the bolded information for the name of your file which contains the gene coordinates (output from custom or supplied pre-processing scripts). File should be kept in the working directory.  
+__Example__: Substitute the bolded information for the name of your file which contains the gene coordinates (output from custom or supplied pre-processing scripts). File should be kept in the working directory.  
 NewCoordinatesDF<-fread( __"DrafGenome_NewCoordinates.csv"__ )  
 *if using a complete genome/GenBank Accession #, do not run this chunk of code*  
 ```{r,tidy=TRUE}
@@ -381,7 +381,7 @@ Re_RunBlast<-' __/Users/spotom/Documents/Temp/Guide-Finder-master/GuideFinder-Ma
 Re_RunBlast_Lowered<-' __/Users/spotom/Documents/Temp/Guide-Finder-master/GuideFinder-Mac/blastn__ ncbi-blast-2.6.0+/bin/blastn -task blastn-short -query re_BLASTguides.fasta -db GenomeDatabase -outfmt 6 -num_threads 4 -dust no -soft_masking false -max_target_seqs 5 -word_size 14 -out re_MatchGuides.blast'  
 ```{r,tidy=TRUE}
 Re_RunBlast<-'/Users/spotom/Documents/Temp/Guide-Finder-master/GuideFinder-Mac/blastn -task blastn-short -query re_BLASTguides.fasta -db GenomeDatabase -outfmt 6 -num_threads 4 -dust no -soft_masking false -max_target_seqs 5 -word_size 13 -out re_MatchGuides.blast'
-#If selecting optio to relax off-target searches 
+#If selecting option to relax off-target searches 
 Re_RunBlast_Lowered<-'/Users/spotom/Documents/Temp/Guide-Finder-master/GuideFinder-Mac/blastn -task blastn-short -query re_BLASTguides.fasta -db GenomeDatabase -outfmt 6 -num_threads 4 -dust no -soft_masking false -max_target_seqs 5 -word_size 14 -out re_MatchGuides.blast'
 ```
 
@@ -833,7 +833,7 @@ FilteredGuides6$GuideID<-1:nrow(FilteredGuides6) #add GUIDE ID to each guide
 
 __Searching for off target effects__  
 BLASTing guides against genome to look for off-target effects. Removes guides that hit more than once; outputs list of guides that have no off target effects and meet all thresholds.    
-The output document (CompleteFilteredGuides) contains all potentially useable guides for a gene. The next step picks the desired # of guides/gene but the document output here may also be useful if a user wanted to manually select guides from a list of potential guides.
+The output document (CompleteFilteredGuides) contains all potentially usable guides for a gene. The next step picks the desired # of guides/gene but the document output here may also be useful if a user wanted to manually select guides from a list of potential guides.
 ```{r, eval=FALSE,tidy=TRUE}
 #shorten guide to 12 nt closest to PAM
 #BLAST this shortened guide against entire genome
@@ -909,7 +909,7 @@ write.csv(CompleteFilteredGuides, file="CompleteFilteredGuides.csv")
 
 
 __Final guide selection__  
-Final guide selection; this is based on length and meeting GC threshold; if longest guide (guide3) at PAM site meets the GC threshold, it's chosen. If not, checks shorter guides at that PAM site. If none at that site, continues down list. Outputs top N guides per gene (selected by user) and calcualtes the distance between the guides; guide pairs that are more distant than user set-threshold (Distbtguides) are output as accetable guide pairs for double knockdown. 
+Final guide selection; this is based on length and meeting GC threshold; if longest guide (guide3) at PAM site meets the GC threshold, it's chosen. If not, checks shorter guides at that PAM site. If none at that site, continues down list. Outputs top N guides per gene (selected by user) and calculates the distance between the guides; guide pairs that are more distant than user set-threshold (Distbtguides) are output as acceptable guide pairs for double knockdown. 
 
 Two outputs: 
 
@@ -917,7 +917,7 @@ Two outputs:
     + Selects N number of guides closest to the start of each gene 
     + TopHits_Guides
   
-* Selects guide pairs sutiable for double knockdown (in that the distance between the guides is greater than the minimum distance set by the user(DistbtnGuides)
+* Selects guide pairs suitable for double knockdown (in that the distance between the guides is greater than the minimum distance set by the user(DistbtnGuides)
     + Pairwise_Guides
   
 ```{r, eval=FALSE}
@@ -994,7 +994,7 @@ Pairwise_GuideSelection2<-replace(Pairwise_GuideSelection2,5,
 
 
 __Genes without guides__  
-Identifies genes that did not produce any usabl Top Hits guides. This list is output in a .csv document called "GenesWithoutGuides" Thesholds can be lowered and this list of genes run through again. To identify and re-run genes that did not produce any PAIRED guides, then run the commented out code in the section below. 
+Identifies genes that did not produce any usable Top Hits guides. This list is output in a .csv document called "GenesWithoutGuides" Thresholds can be lowered and this list of genes run through again. To identify and re-run genes that did not produce any PAIRED guides, then run the commented out code in the section below. 
 ```{r, eval=FALSE,tidy=TRUE}
 
 # Identify genes that don't produce any Top Hits guides with the primary thresholds 
