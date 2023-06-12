@@ -229,11 +229,11 @@ ScrambleBlast <- '__/Users/spotom/Documents/Temp/Guide-Finder-master/GuideFinder
 Similarly, set the path for (optional) scramble guide creation. Scramble guides are 20nt sequences without a match to anywhere in your input genome and can act as a negative control for your experiments. For ScrambleBlast, only change the path to the location of BLASTn on your computer (should be same as "RunBlast" path). (The input and output file names, i.e. BLASTscrambles.fasta and MatchScrambles.blast SHOULD NOT be changed)
 
 ```{r}
-MakeDatabase<-'/Users/spotom/Documents/Temp/makeblastdb -in concatenatedfastafile.txt -dbtype nucl -out GenomeDatabase'
+MakeDatabase<-'/Users/mellos/Documents/GitHub/Guide-Finder/GuideFinder-Mac/makeblastdb -in Complete/mutansexamplefastafile.txt -dbtype nucl -out GenomeDatabase'
 
-RunBlast<-'/Users/spotom/Documents/Temp/blastn -task blastn-short -query BLASTguides.fasta -db GenomeDatabase -outfmt 6 -num_threads 4 -dust no -soft_masking false -max_target_seqs 5 -word_size 13 -out MatchGuides.blast'
+RunBlast<-'/Users/mellos/Documents/GitHub/Guide-Finder/GuideFinder-Mac/blastn -task blastn-short -query BLASTguides.fasta -db GenomeDatabase -outfmt 6 -num_threads 4 -dust no -soft_masking false -max_target_seqs 5 -word_size 13 -out MatchGuides.blast'
 
-ScrambleBlast<-'/Users/spotom/Documents/Temp/blastn -task blastn-short -query BLASTscrambles.fasta -db GenomeDatabase -outfmt 6 -num_threads 4 -dust no -soft_masking false -max_target_seqs 5 -word_size 11 -perc_identity .9 -out MatchScrambles.blast'
+ScrambleBlast<-'/Users/mellos/Documents/GitHub/Guide-Finder/GuideFinder-Mac/blastn -task blastn-short -query BLASTscrambles.fasta -db GenomeDatabase -outfmt 6 -num_threads 4 -dust no -soft_masking false -max_target_seqs 5 -word_size 11 -perc_identity .9 -out MatchScrambles.blast'
 
 ```
 
@@ -245,7 +245,7 @@ script to concatenate the several contigs into one
 __Example__: Substitute the bolded information for the name of your FASTA file (kept in working directory)  
 InputGenome<- readDNAStringSet( __"mutansexamplefastafile.txt"__)
 ```{r, tidy=TRUE}
-InputGenome<- readDNAStringSet("strep_py.fasta")
+InputGenome<- readDNAStringSet("Complete/mutansexamplefastafile.txt")
 
 ```
 
@@ -253,7 +253,7 @@ InputGenome<- readDNAStringSet("strep_py.fasta")
 Set the desired putative promoter region, for example, setting "PromoterRegion" to 50 if you want the Guide Finder to search 50 bp upstream of the transcription start site for each gene to identify guides. If you do not want Guide Finder to make guides from the promoter region, set to 0. Set between 0 - 100. Do not set above 100 bp. 
 ```{r}
 
-PromoterRegion<-0
+PromoterRegion<-50
 
 SubtractProm<-function(x) {
   x - PromoterRegion
@@ -287,7 +287,7 @@ __Example__: Substitute the bolded information for the GenBank Accession # for y
 GenBankInfo<- readGenBank(GBAccession( __"AE014133.2"__ ))   
 ```{r,tidy=TRUE}
 #retrieves annotation from GenBank, called by accession
-GenBankInfo<- readGenBank(GBAccession("AL009126.3")) 
+GenBankInfo<- readGenBank(GBAccession("AE014133.2")) 
 #from annotated file, retrieves coding sequence information
 CDSInfoDF<-data.frame(attr(GenBankInfo, "cds")) 
 ```
@@ -388,9 +388,9 @@ __Example__: Substitute bolded information in Re_RunBlast and Re_RunBlast_Lowere
 Re_RunBlast<-' __/Users/spotom/Documents/Temp/Guide-Finder-master/GuideFinder-Mac/blastn__ -task blastn-short -query re_BLASTguides.fasta -db GenomeDatabase -outfmt 6 -num_threads 4 -dust no -soft_masking false -max_target_seqs 5 -word_size 13 -out re_MatchGuides.blast'  
 Re_RunBlast_Lowered<-' __/Users/spotom/Documents/Temp/Guide-Finder-master/GuideFinder-Mac/blastn__ ncbi-blast-2.6.0+/bin/blastn -task blastn-short -query re_BLASTguides.fasta -db GenomeDatabase -outfmt 6 -num_threads 4 -dust no -soft_masking false -max_target_seqs 5 -word_size 14 -out re_MatchGuides.blast'  
 ```{r,tidy=TRUE}
-Re_RunBlast<-'/Users/spotom/Documents/Temp/Guide-Finder-master/GuideFinder-Mac/blastn -task blastn-short -query re_BLASTguides.fasta -db GenomeDatabase -outfmt 6 -num_threads 4 -dust no -soft_masking false -max_target_seqs 5 -word_size 13 -out re_MatchGuides.blast'
+Re_RunBlast<-'/Users/mellos/Documents/GitHub/Guide-Finder/GuideFinder-Mac/blastn -task blastn-short -query re_BLASTguides.fasta -db GenomeDatabase -outfmt 6 -num_threads 4 -dust no -soft_masking false -max_target_seqs 5 -word_size 13 -out re_MatchGuides.blast'
 #If selecting option to relax off-target searches 
-Re_RunBlast_Lowered<-'/Users/spotom/Documents/Temp/Guide-Finder-master/GuideFinder-Mac/blastn -task blastn-short -query re_BLASTguides.fasta -db GenomeDatabase -outfmt 6 -num_threads 4 -dust no -soft_masking false -max_target_seqs 5 -word_size 14 -out re_MatchGuides.blast'
+Re_RunBlast_Lowered<-'/Users/mellos/Documents/GitHub/Guide-Finder/GuideFinder-Mac/blastn -task blastn-short -query re_BLASTguides.fasta -db GenomeDatabase -outfmt 6 -num_threads 4 -dust no -soft_masking false -max_target_seqs 5 -word_size 14 -out re_MatchGuides.blast'
 ```
 
 
@@ -400,7 +400,7 @@ __All user parameters are set above__
 Code is commented so that the user may follow along, but no further user inputs or edits are needed. 
 
 __For complete genomes, subsets genes if desired. IDs coordinates & alters them to include putative promoter sequence__  
-This chunk of code is only performed on complete genomes, since the program identifies the coding sequence + promoter region from complete genomes using coordinates from the annotated Genbank file. By telling the program only to run the following if CompleteGenome == TRUE, this part is skipped if the user is utilizing a draft genome (specified by "CompelteGenome<-False"", above). For complete genomes, creates NewCoordinatesDF (for draft genomes, this data frame was made during preprocessing)
+This chunk of code is only performed on complete genomes, since the program identifies the coding sequence + promoter region from complete genomes using coordinates from the annotated Genbank file. By telling the program only to run the following if CompleteGenome == TRUE, this part is skipped if the user is utilizing a draft genome (specified by "CompleteGenome<-False"", above). For complete genomes, creates NewCoordinatesDF (for draft genomes, this data frame was made during preprocessing)
 ```{r, eval=FALSE,tidy=TRUE}
 
 if (CompleteGenome == TRUE) {
