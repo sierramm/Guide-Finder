@@ -60,6 +60,7 @@ suppressPackageStartupMessages(library(data.table))
 suppressPackageStartupMessages(library(dplyr))
 suppressPackageStartupMessages(library(purrr))
 suppressPackageStartupMessages(library(stringi))
+suppressPackageStartupMessages(library(tidyr))
 
 ```
 
@@ -114,6 +115,10 @@ TestingStrings<-function(x) {
   else {
     print("NoneDetected")
   }
+}
+
+TestingStrings_test <- function(x) {
+  str_detect(x,"AAAA")
 }
 
 #function to filter based on if the guide contains a string of TTTT
@@ -201,15 +206,15 @@ print(Df6)
 }
 
 #function to make scrambles 
-ScramblesDF<-NULL
-for (i in 1:nrow(Scrambles)) {
-  Row<-Scrambles[i,]
-  seq = sample(DNA_ALPHABET[1:4], size=20, replace=TRUE)
-  seq = paste(seq, collapse="")
-  Row<-seq
-  ScramblesDF<-rbind(ScramblesDF,Row)
-}
-ScramblesDF_2<-data.frame(ScramblesDF, stringsAsFactors = FALSE)
+# ScramblesDF<-NULL
+# for (i in 1:nrow(Scrambles)) {
+#   Row<-Scrambles[i,]
+#   seq = sample(DNA_ALPHABET[1:4], size=20, replace=TRUE)
+#   seq = paste(seq, collapse="")
+#   Row<-seq
+#   ScramblesDF<-rbind(ScramblesDF,Row)
+# }
+# ScramblesDF_2<-data.frame(ScramblesDF, stringsAsFactors = FALSE)
 
 
 
@@ -229,11 +234,11 @@ ScrambleBlast <- '__/Users/spotom/Documents/Temp/Guide-Finder-master/GuideFinder
 Similarly, set the path for (optional) scramble guide creation. Scramble guides are 20nt sequences without a match to anywhere in your input genome and can act as a negative control for your experiments. For ScrambleBlast, only change the path to the location of BLASTn on your computer (should be same as "RunBlast" path). (The input and output file names, i.e. BLASTscrambles.fasta and MatchScrambles.blast SHOULD NOT be changed)
 
 ```{r}
-MakeDatabase<-'/Users/mellos/Documents/GitHub/Guide-Finder/GuideFinder-Mac/makeblastdb -in Complete/mutansexamplefastafile.txt -dbtype nucl -out GenomeDatabase'
+MakeDatabase<-'makeblastdb -in Complete/mutansexamplefastafile.txt -dbtype nucl -out GenomeDatabase'
 
-RunBlast<-'/Users/mellos/Documents/GitHub/Guide-Finder/GuideFinder-Mac/blastn -task blastn-short -query BLASTguides.fasta -db GenomeDatabase -outfmt 6 -num_threads 4 -dust no -soft_masking false -max_target_seqs 5 -word_size 13 -out MatchGuides.blast'
+RunBlast<-'blastn -task blastn-short -query BLASTguides.fasta -db GenomeDatabase -outfmt 6 -num_threads 4 -dust no -soft_masking false -max_target_seqs 5 -word_size 13 -out MatchGuides.blast'
 
-ScrambleBlast<-'/Users/mellos/Documents/GitHub/Guide-Finder/GuideFinder-Mac/blastn -task blastn-short -query BLASTscrambles.fasta -db GenomeDatabase -outfmt 6 -num_threads 4 -dust no -soft_masking false -max_target_seqs 5 -word_size 11 -perc_identity .9 -out MatchScrambles.blast'
+ScrambleBlast<-'blastn -task blastn-short -query BLASTscrambles.fasta -db GenomeDatabase -outfmt 6 -num_threads 4 -dust no -soft_masking false -max_target_seqs 5 -word_size 11 -perc_identity .9 -out MatchScrambles.blast'
 
 ```
 
@@ -388,9 +393,9 @@ __Example__: Substitute bolded information in Re_RunBlast and Re_RunBlast_Lowere
 Re_RunBlast<-' __/Users/spotom/Documents/Temp/Guide-Finder-master/GuideFinder-Mac/blastn__ -task blastn-short -query re_BLASTguides.fasta -db GenomeDatabase -outfmt 6 -num_threads 4 -dust no -soft_masking false -max_target_seqs 5 -word_size 13 -out re_MatchGuides.blast'  
 Re_RunBlast_Lowered<-' __/Users/spotom/Documents/Temp/Guide-Finder-master/GuideFinder-Mac/blastn__ ncbi-blast-2.6.0+/bin/blastn -task blastn-short -query re_BLASTguides.fasta -db GenomeDatabase -outfmt 6 -num_threads 4 -dust no -soft_masking false -max_target_seqs 5 -word_size 14 -out re_MatchGuides.blast'  
 ```{r,tidy=TRUE}
-Re_RunBlast<-'/Users/mellos/Documents/GitHub/Guide-Finder/GuideFinder-Mac/blastn -task blastn-short -query re_BLASTguides.fasta -db GenomeDatabase -outfmt 6 -num_threads 4 -dust no -soft_masking false -max_target_seqs 5 -word_size 13 -out re_MatchGuides.blast'
+Re_RunBlast<-'blastn -task blastn-short -query re_BLASTguides.fasta -db GenomeDatabase -outfmt 6 -num_threads 4 -dust no -soft_masking false -max_target_seqs 5 -word_size 13 -out re_MatchGuides.blast'
 #If selecting option to relax off-target searches 
-Re_RunBlast_Lowered<-'/Users/mellos/Documents/GitHub/Guide-Finder/GuideFinder-Mac/blastn -task blastn-short -query re_BLASTguides.fasta -db GenomeDatabase -outfmt 6 -num_threads 4 -dust no -soft_masking false -max_target_seqs 5 -word_size 14 -out re_MatchGuides.blast'
+Re_RunBlast_Lowered<-'blastn -task blastn-short -query re_BLASTguides.fasta -db GenomeDatabase -outfmt 6 -num_threads 4 -dust no -soft_masking false -max_target_seqs 5 -word_size 14 -out re_MatchGuides.blast'
 ```
 
 
@@ -554,7 +559,7 @@ for (i in 1:NumberofRows) {
 ```
 
 
-__Making guides given the PAM sites identifed above__   
+__Making guides given the PAM sites identified above__   
 The first loop makes guides targeted to non-template strand for PAM sites in promoter and gene body 
 The second loop makes guides targeted to the template strand for PAM sites in the promoter 
 ```{r, eval=FALSE}
@@ -744,11 +749,12 @@ write.csv(CompleteGuidesList, file="CompleteGuidesList.csv")
 
 __Filtering guides__  
 Filtering guides by all of the parameters-- getting rid of those that don't meet the set thresholds.    
-Using the large guide with features data frame, begin to filter guides by GC content, distance into CDS, and if the guide has a homopolymer string. The output this is a data frame like GuidesWithFeatures but with an N/A in place of a value if that value does not meet the theshold we set; use NA to filter out guides
+Using the large guide with features data frame, begin to filter guides by GC content, distance into CDS, and if the guide has a homopolymer string. The output this is a data frame like GuidesWithFeatures but with an N/A in place of a value if that value does not meet the threshold we set; use NA to filter out guides
 ```{r, eval=FALSE}
 SubsetFeatureGuides<-list(GuidesWithFeatures[,"ID"])
 
 # Run the guides through the various filters (don't filter out yet, just assign T/F)
+Sys.time()
 FilteredGuides<-cbind(GuidesWithFeatures$GeneProduct,
                       GuidesWithFeatures$Guide1,
                       GuidesWithFeatures$GC_G1, 
@@ -770,6 +776,13 @@ FilteredGuides<-cbind(GuidesWithFeatures$GeneProduct,
                       lapply(GuidesWithFeatures$Guide3,TestingRE),
                       lapply(GuidesWithFeatures$DistanceofFGuide_AsPercentageofCDS,TestingDistance), 
                       GuidesWithFeatures$StartofGuide)
+Sys.time()
+
+FilteredGuides_test <-cbind(GuidesWithFeatures$GeneProduct,
+                      GuidesWithFeatures$Guide1,
+                      GuidesWithFeatures$GC_G1, 
+                      lapply(GuidesWithFeatures$Guide1,TestingStrings_test))
+
 
 # make data frame
 FilteredGuides<-data.frame(FilteredGuides)
@@ -809,7 +822,7 @@ FilteredGuides2<-subset(FilteredGuides1,
 FilteredGuides3<-subset(FilteredGuides2, 
                         DistanceofGuide_AsPercentageofCDS != "N/A", 
                         select=ID:StartofGuideLocation)
-#remove thoes with strings of As 
+#remove those with strings of As 
 FilteredGuides4<-subset(FilteredGuides3, G3_AString == "NoneDetected", 
                         select=ID:StartofGuideLocation)
 
