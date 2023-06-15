@@ -1009,7 +1009,11 @@ Pairwise_GuideSelection2<-replace(Pairwise_GuideSelection2, 5,
 Pairwise_GuideSelection2<-replace(Pairwise_GuideSelection2,4, 
                                  RemoveNGG(Pairwise_GuideSelection2$Guide1)) 
 Pairwise_GuideSelection2<-replace(Pairwise_GuideSelection2,5, 
-                                 RemoveNGG(Pairwise_GuideSelection2$Guide2)) 
+                                 RemoveNGG(Pairwise_GuideSelection2$Guide2))
+
+# create the output files
+write.csv(TopHits_GuideSelection, file = "TopHits_Guides.csv")
+write.csv(Pairwise_GuideSelection2, file = "Pairwise_Guides.csv")
 
 ```
 
