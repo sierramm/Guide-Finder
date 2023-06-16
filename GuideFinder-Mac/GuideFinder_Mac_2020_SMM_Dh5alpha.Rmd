@@ -234,7 +234,7 @@ ScrambleBlast <- '__/Users/spotom/Documents/Temp/Guide-Finder-master/GuideFinder
 Similarly, set the path for (optional) scramble guide creation. Scramble guides are 20nt sequences without a match to anywhere in your input genome and can act as a negative control for your experiments. For ScrambleBlast, only change the path to the location of BLASTn on your computer (should be same as "RunBlast" path). (The input and output file names, i.e. BLASTscrambles.fasta and MatchScrambles.blast SHOULD NOT be changed)
 
 ```{r}
-MakeDatabase<-'makeblastdb -in Complete/mutansexamplefastafile.txt -dbtype nucl -out GenomeDatabase'
+MakeDatabase<-'makeblastdb -in E_coli_DH5alpha/E_coli_CP017100.txt -dbtype nucl -out GenomeDatabase'
 
 RunBlast<-'blastn -task blastn-short -query BLASTguides.fasta -db GenomeDatabase -outfmt 6 -num_threads 4 -dust no -soft_masking false -max_target_seqs 5 -word_size 13 -out MatchGuides.blast'
 
@@ -250,7 +250,7 @@ script to concatenate the several contigs into one
 __Example__: Substitute the bolded information for the name of your FASTA file (kept in working directory)  
 InputGenome<- readDNAStringSet( __"mutansexamplefastafile.txt"__)
 ```{r, tidy=TRUE}
-InputGenome<- readDNAStringSet("E_coli_DH5alpha/E_coli_CP017100.fasta")
+InputGenome<- readDNAStringSet("E_coli_DH5alpha/E_coli_CP017100.txt")
 
 ```
 
@@ -292,7 +292,7 @@ __Example__: Substitute the bolded information for the GenBank Accession # for y
 GenBankInfo<- readGenBank(GBAccession( __"AE014133.2"__ ))   
 ```{r,tidy=TRUE}
 #retrieves annotation from GenBank, called by accession
-GenBankInfo<- readGenBank(GBAccession("AE014133.2")) 
+GenBankInfo<- readGenBank(GBAccession("CP017100.1")) 
 #from annotated file, retrieves coding sequence information
 CDSInfoDF<-data.frame(attr(GenBankInfo, "cds")) 
 ```
@@ -360,8 +360,8 @@ RE_site <- "GGTCTC"
     each of the genes you want to select. GenesToSelect<-c( __"SMU_01"__, __"SMU_02"__, __"SMU_05"__)
 
 ```{r,tidy=TRUE}
-GenesToSelect<-c("SMU_01", "SMU_03")
-ManualSelection<-FALSE
+GenesToSelect<-c("NEB5A_00485")
+ManualSelection<-TRUE
 ```
 
 ***
