@@ -258,7 +258,7 @@ InputGenome<- readDNAStringSet("E_coli_DH5alpha/E_coli_CP017100.txt")
 Set the desired putative promoter region, for example, setting "PromoterRegion" to 50 if you want the Guide Finder to search 50 bp upstream of the transcription start site for each gene to identify guides. If you do not want Guide Finder to make guides from the promoter region, set to 0. Set between 0 - 100. Do not set above 100 bp. 
 ```{r}
 
-PromoterRegion<-50
+PromoterRegion<-0
 
 SubtractProm<-function(x) {
   x - PromoterRegion
@@ -338,10 +338,10 @@ Set the following:
 
 ```{r,tidy=TRUE}
 
-N <- 15 
+N <- 20 
 GC_Min<-.35
 DistanceAsPercentageofCDS<-.50
-GuidesPerGene<-5
+GuidesPerGene<-10
 DistbtGuides<-100
 Test_bad_seed <- TRUE 
 Bad_seed <- "ACCCA"  
@@ -658,37 +658,40 @@ MakeGuidesList <- function(r, N){
   data.frame(Guide1_P,Guide2_P, Guide3_P, NewDF3,DistanceIntoCDS_AsPercentage,ID, Start)
 }
 
-if (OPTS.UseParallel == TRUE) {
-  require(parallel)
-  cl <- makeCluster(OPTS.Cores)
-  AllGuidesListPromoter <- parApply(cl,Prom_AllGuidesLocation, 1, MakeGuidesList, OPTS.N)
-  stopCluster(cl)
+if (length(Prom_AllGuidesLocation) != 0) {
+
+  if (OPTS.UseParallel == TRUE) {
+    require(parallel)
+    cl <- makeCluster(OPTS.Cores)
+    AllGuidesListPromoter <- parApply(cl,Prom_AllGuidesLocation, 1, MakeGuidesList, OPTS.N)
+    stopCluster(cl)
+    
+  } else {
+    PromoterAllGuidesList <- apply(Prom_AllGuidesLocation, 1, MakeGuidesList, OPTS.N)}
+    
   
-} else {
-  PromoterAllGuidesList <- apply(Prom_AllGuidesLocation, 1, MakeGuidesList, OPTS.N)}
+  #rbindlist function takes the list of data frames and converts it into one list
+  Promoter_AllGuidesList<-rbindlist(PromoterAllGuidesList)
+  names(Promoter_AllGuidesList)<-c("Guide1", "Guide2","Guide3","GeneProduct",
+                                   "DistanceofGuide_AsPercentageofCDS", 
+                                   "ID", "Location") 
   
+  #making characters out of factors 
+  Promoter_AllGuidesList$Guide1<-as.character(Promoter_AllGuidesList$Guide1)
+  Promoter_AllGuidesList$Guide2<-as.character(Promoter_AllGuidesList$Guide2)
+  Promoter_AllGuidesList$Guide3<-as.character(Promoter_AllGuidesList$Guide3)
+  Promoter_AllGuidesList$GeneProduct<-as.character(Promoter_AllGuidesList$GeneProduct)
+  
+  #must reverse all guides made from the promoter sequence
+  #b/c we took the downstream of GG and we want the upstream of GG
+  Promoter_AllGuidesList$Guide1<-lapply(Promoter_AllGuidesList$Guide1, reverse)
+  Promoter_AllGuidesList$Guide2<-lapply(Promoter_AllGuidesList$Guide2, reverse)
+  Promoter_AllGuidesList$Guide3<-lapply(Promoter_AllGuidesList$Guide3, reverse)
+  
+  #All the possible guides for promoter + gene body 
+  CorrectedGuidesList<-rbind(Promoter_AllGuidesList, CorrectedGuidesList)
 
-#rbindlist function takes the list of data frames and converts it into one list
-Promoter_AllGuidesList<-rbindlist(PromoterAllGuidesList)
-names(Promoter_AllGuidesList)<-c("Guide1", "Guide2","Guide3","GeneProduct",
-                                 "DistanceofGuide_AsPercentageofCDS", 
-                                 "ID", "Location") 
-
-#making characters out of factors 
-Promoter_AllGuidesList$Guide1<-as.character(Promoter_AllGuidesList$Guide1)
-Promoter_AllGuidesList$Guide2<-as.character(Promoter_AllGuidesList$Guide2)
-Promoter_AllGuidesList$Guide3<-as.character(Promoter_AllGuidesList$Guide3)
-Promoter_AllGuidesList$GeneProduct<-as.character(Promoter_AllGuidesList$GeneProduct)
-
-#must reverse all guides made from the promoter sequence
-#b/c we took the downstream of GG and we want the upstream of GG
-Promoter_AllGuidesList$Guide1<-lapply(Promoter_AllGuidesList$Guide1, reverse)
-Promoter_AllGuidesList$Guide2<-lapply(Promoter_AllGuidesList$Guide2, reverse)
-Promoter_AllGuidesList$Guide3<-lapply(Promoter_AllGuidesList$Guide3, reverse)
-
-#All the possible guides for promoter + gene body 
-CorrectedGuidesList<-rbind(Promoter_AllGuidesList, CorrectedGuidesList)
-
+} 
 ```
 
 
@@ -776,12 +779,12 @@ FilteredGuides<-cbind(GuidesWithFeatures$GeneProduct,
                       lapply(GuidesWithFeatures$Guide3,TestingRE),
                       lapply(GuidesWithFeatures$DistanceofFGuide_AsPercentageofCDS,TestingDistance), 
                       GuidesWithFeatures$StartofGuide)
-Sys.time()
-
-FilteredGuides_test <-cbind(GuidesWithFeatures$GeneProduct,
-                      GuidesWithFeatures$Guide1,
-                      GuidesWithFeatures$GC_G1, 
-                      lapply(GuidesWithFeatures$Guide1,TestingStrings_test))
+# Sys.time()
+# 
+# FilteredGuides_test <-cbind(GuidesWithFeatures$GeneProduct,
+#                       GuidesWithFeatures$Guide1,
+#                       GuidesWithFeatures$GC_G1, 
+#                       lapply(GuidesWithFeatures$Guide1,TestingStrings_test))
 
 
 # make data frame

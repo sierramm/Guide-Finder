@@ -6,7 +6,7 @@
   "description": "E_coli_DH5alpha/E_coli_CP017100.txt",
   "number-of-letters": 4583637,
   "number-of-sequences": 1,
-  "last-updated": "2023-06-16T14:33:00",
+  "last-updated": "2023-06-19T10:10:00",
   "number-of-volumes": 1,
   "bytes-total": 1183089,
   "bytes-to-cache": 1146055,
