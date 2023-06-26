@@ -39,7 +39,7 @@ had to download an rchived version of refgenome: https://cran.r-project.org/src/
 
 ```{r}
 install.packages("doBy")
-install.packages("~/Downloads/refGenome_1.7.7.tar.gz", repos = NULL, type = "source")
+install.packages("/projects/oh-lab/sierra/Guide-Finder/refGenome_1.7.7.tar.gz", repos = NULL, type = "source")
 ```
 
 __Loading Packages__
@@ -84,11 +84,11 @@ L_CheckTheGC<- function(x) {
 
 #function to find PAM site
 FindCC<-function (Sequences) 
-{str_locate_all(Sequences,"CC")}
+{str_locate_all(Sequences,".")}
 
 #function to find PAM site (promoter sequence only)
 FindGG<-function (Sequences) 
-{str_locate_all(Sequences,"GG")}
+{str_locate_all(Sequences,".")}
 
 
 #function to filter based on distance into CDS 
@@ -234,7 +234,7 @@ ScrambleBlast <- '__/Users/spotom/Documents/Temp/Guide-Finder-master/GuideFinder
 Similarly, set the path for (optional) scramble guide creation. Scramble guides are 20nt sequences without a match to anywhere in your input genome and can act as a negative control for your experiments. For ScrambleBlast, only change the path to the location of BLASTn on your computer (should be same as "RunBlast" path). (The input and output file names, i.e. BLASTscrambles.fasta and MatchScrambles.blast SHOULD NOT be changed)
 
 ```{r}
-MakeDatabase<-'makeblastdb -in E_coli_DH5alpha/E_coli_CP017100.txt -dbtype nucl -out GenomeDatabase'
+MakeDatabase<-'makeblastdb -in E_coli_CP017100.txt -dbtype nucl -out GenomeDatabase'
 
 RunBlast<-'blastn -task blastn-short -query BLASTguides.fasta -db GenomeDatabase -outfmt 6 -num_threads 4 -dust no -soft_masking false -max_target_seqs 5 -word_size 13 -out MatchGuides.blast'
 
@@ -250,7 +250,7 @@ script to concatenate the several contigs into one
 __Example__: Substitute the bolded information for the name of your FASTA file (kept in working directory)  
 InputGenome<- readDNAStringSet( __"mutansexamplefastafile.txt"__)
 ```{r, tidy=TRUE}
-InputGenome<- readDNAStringSet("E_coli_DH5alpha/E_coli_CP017100.txt")
+InputGenome<- readDNAStringSet("/projects/oh-lab/sierra/Guide-Finder/E_coli_CP017100.txt")
 
 ```
 
@@ -779,7 +779,7 @@ FilteredGuides<-cbind(GuidesWithFeatures$GeneProduct,
                       lapply(GuidesWithFeatures$Guide3,TestingRE),
                       lapply(GuidesWithFeatures$DistanceofFGuide_AsPercentageofCDS,TestingDistance), 
                       GuidesWithFeatures$StartofGuide)
-# Sys.time()
+Sys.time()
 # 
 # FilteredGuides_test <-cbind(GuidesWithFeatures$GeneProduct,
 #                       GuidesWithFeatures$Guide1,
