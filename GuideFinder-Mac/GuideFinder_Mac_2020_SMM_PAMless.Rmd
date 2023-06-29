@@ -168,7 +168,10 @@ ReverseCompGuide<-function(x) {
 RemoveNGG<-function(x) { 
   substr(x,1,(nchar(x) - 3))}
 
-
+#extract NGG/PAM sequence
+ExtractPAM <- function(x) {
+  substr(x, nchar(x)-2, nchar(x))
+}
 
 #calculating the distance between guides to identity guide pairs 
 GuideDistance<-function (x) {Df2<-as.matrix(dist(x$Location))
@@ -719,7 +722,12 @@ names(GuidesWithFeatures)<-c("GeneProduct", "GC_G1", "Guide1", "GC_G2",
 #regardless of whether or not these guides meet required thresholds. 
 #Removing NGG before outputting. 
 CompleteGuidesList<- data.frame(lapply(GuidesWithFeatures, 
-                                       as.character), stringsAsFactors=FALSE) 
+                                       as.character), stringsAsFactors=FALSE)
+#create column with PAM sequence
+CompleteGuidesList <- CompleteGuidesList %>%
+  mutate(PAM = ExtractPAM(Guide3))
+
+#remove NGG sequence from guide
 CompleteGuidesList<-replace(CompleteGuidesList,3,RemoveNGG(CompleteGuidesList$Guide1)) 
 CompleteGuidesList<-replace(CompleteGuidesList,5,RemoveNGG(CompleteGuidesList$Guide2))
 CompleteGuidesList<-replace(CompleteGuidesList,7,RemoveNGG(CompleteGuidesList$Guide3))
@@ -762,6 +770,8 @@ FilteredGuides <- GuidesWithFeatures %>%
 #Removing NGG prior to outputting
 CompleteGuidesList_Thresholds <- data.frame(lapply(FilteredGuides, as.character), 
                                             stringsAsFactors=FALSE)
+CompleteGuidesList_Thresholds <- CompleteGuidesList_Thresholds %>%
+  mutate(PAM = ExtractPAM(Guide3))
 CompleteGuidesList_Thresholds<-replace(CompleteGuidesList_Thresholds,3,
                                        RemoveNGG(CompleteGuidesList_Thresholds$Guide1)) 
 CompleteGuidesList_Thresholds<-replace(CompleteGuidesList_Thresholds,9,
@@ -861,6 +871,8 @@ names(GuidesWithoutOffTarget)<-c("IDs","ID","GeneProduct","Guide1","GC_G1",
 #complete list of guides for each gene in which each guide meets the required thresholds 
 CompleteFilteredGuides<-data.frame(lapply(GuidesWithoutOffTarget, 
                                           as.character), stringsAsFactors=FALSE)
+CompleteFilteredGuides <- CompleteFilteredGuides %>%
+  mutate(PAM = ExtractPAM(Guide3))
 CompleteFilteredGuides<-replace(CompleteFilteredGuides,4,
                                 RemoveNGG(CompleteFilteredGuides$Guide1)) 
 CompleteFilteredGuides<-replace(CompleteFilteredGuides,10,
@@ -912,6 +924,10 @@ TopHits_GuideSelection <- UseableGuides %>%
 TopHits_GuideSelection<-na.omit(TopHits_GuideSelection) #remove NAs
 TopHits_GuideSelection<-replace(TopHits_GuideSelection, 1, 
                                 as.character(TopHits_GuideSelection$Guide))
+#add PAM column
+TopHits_GuideSelection <-  TopHits_GuideSelection %>%
+  mutate(PAM = ExtractPAM(Guide))
+
 #removing NGG
 TopHits_GuideSelection<-replace(TopHits_GuideSelection,1, 
                                 RemoveNGG(TopHits_GuideSelection$Guide)) 
