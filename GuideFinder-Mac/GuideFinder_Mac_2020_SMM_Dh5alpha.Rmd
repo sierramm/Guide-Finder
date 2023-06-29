@@ -61,6 +61,7 @@ suppressPackageStartupMessages(library(dplyr))
 suppressPackageStartupMessages(library(purrr))
 suppressPackageStartupMessages(library(stringi))
 suppressPackageStartupMessages(library(tidyr))
+suppressPackageStartupMessages(library(dplyr))
 
 ```
 
@@ -903,6 +904,13 @@ colnames(Hits)<-c("hits", "GuideID")
 OneHit<-Hits[which(Hits$hits == 1),]
 GuidesWithoutOffTarget<-merge(OneHit, FilteredGuides6, by="GuideID")
 GuidesWithoutOffTarget<-GuidesWithoutOffTarget[order(GuidesWithoutOffTarget$ID, decreasing = F),]
+
+#Create file that indicates which guides have off target effects
+GuidesHits <- merge(ShortenedGuides, Hits, by="GuideID")
+GuidesHits <- GuidesHits %>%
+  mutate(OffTarget = hits>1) %>%
+  mutate(StartOfGuideLocation = FilteredGuides6$StartofGuideLocation)
+write.csv(GuidesHits, file="GuidesHitsBLAST.csv")
 
 #Create new column in GuidesWithoutOffTargets that contains the IDs as factor
 #must be factors to use function that splits data frame by IDs 
