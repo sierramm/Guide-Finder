@@ -18,7 +18,7 @@ setwd ('/Users/doingg/Dropbox\ (JAX)/Github/Guide-Finder/GuideFinder-Mac/Example
 
 __Install Packages__
 These packages need only to be installed once 
-```{r}
+```{r, eval=F}
 
 # installing version 3.10 
 if (!requireNamespace("BiocManager", quietly = TRUE))
@@ -36,7 +36,7 @@ options(max.print=999999)
 
 had to download an rchived version of refgenome: https://cran.r-project.org/src/contrib/Archive/refGenome/
 
-```{r}
+```{r, eval=F}
 install.packages("doBy")
 install.packages("~/Downloads/refGenome_1.7.7.tar.gz", repos = NULL, type = "source")
 ```
@@ -82,7 +82,7 @@ L_CheckTheGC<- function(x) {
 
 #function to find PAM site
 FindCC<-function (Sequences) 
-{str_locate_all(Sequences,"CC")}
+{str_locate_all(Sequences,"CC")} # ..
 
 #function to find PAM site (promotor sequence only)
 FindGG<-function (Sequences) 
@@ -228,7 +228,8 @@ ScrambleBlast <- '__/Users/spotom/Documents/Temp/Guide-Finder-master/GuideFinder
 Similarly, set the path for (optional) scramble guide creation. Scramble guides are 20nt sequences without a match to anywhere in your input genome and can act as a negative control for your experiments. For ScrambleBlast, only change the path to the location of BLASTn on your computer (should be same as "RunBlast" path). (The input and output file names, i.e. BLASTscrambles.fasta and MatchScrambles.blast SHOULD NOT be changed)
 
 ```{r}
-MakeDatabase<-'makeblastdb -in concatenatedfastafile.txt -dbtype nucl -out GenomeDatabase'
+#concatenatedfastafile.txt for draft genome
+MakeDatabase<-'makeblastdb -in ../Complete/mutansexamplefastafile.txt  -dbtype nucl -out GenomeDatabase'
 
 RunBlast<-'blastn -task blastn-short -query BLASTguides.fasta -db GenomeDatabase -outfmt 6 -num_threads 4 -dust no -soft_masking false -max_target_seqs 5 -word_size 13 -out MatchGuides.blast'
 
@@ -244,7 +245,8 @@ script to concatenate the several contigs into one
 __Example__: Substitute the bolded information for the name of your FASTA file (kept in working directory)  
 InputGenome<- readDNAStringSet( __"mutansexamplefastafile.txt"__)
 ```{r, tidy=TRUE}
-InputGenome<- readDNAStringSet("concatenatedfastafile.txt")
+# concatenatedfastafile.txt
+InputGenome<- readDNAStringSet("../Complete/mutansexamplefastafile.txt")
 
 ```
 
@@ -252,7 +254,7 @@ InputGenome<- readDNAStringSet("concatenatedfastafile.txt")
 Set the desired putative promoter region, for example, setting "PromoterRegion" to 50 if you want the Guide Finder to search 50 bp upstream of the transcription start site for each gene to identify guides. If you do not want Guide Finder to make guides from the promoter region, set to 0. Set between 0 - 100. Do not set above 100 bp. 
 ```{r}
 
-PromoterRegion<-0
+PromoterRegion<-30
 
 SubtractProm<-function(x) {
   x - PromoterRegion
@@ -286,7 +288,7 @@ __Example__: Subsitute the bolded information for the GenBank Acession # for you
 GenBankInfo<- readGenBank(GBAccession( __"AE014133.2"__ ))   
 ```{r,tidy=TRUE}
 #retrieves annotation from GenBank, called by accession
-GenBankInfo<- readGenBank(GBAccession("AL009126.3")) 
+  GenBankInfo<- readGenBank(GBAccession("AL009126.3")) 
 #from annotated file, retrieves coding sequence information
 CDSInfoDF<-data.frame(attr(GenBankInfo, "cds")) 
 ```
@@ -953,26 +955,33 @@ for (i in 1: length(SplitByIds)) {
                          as.character(MySplitByIdDF$StartofGuideLocation))
   MySplitByIdDF<-replace(MySplitByIdDF, 17, 
                          as.numeric(MySplitByIdDF$StartofGuideLocation))
-  MySplitByIdDF<-MySplitByIdDF[order(MySplitByIdDF$StartofGuideLocation, decreasing = F),]
+  MySplitByIdDF<-MySplitByIdDF[order(MySplitByIdDF$StartofGuideLocation, 
+                                     decreasing = F),]
   TestingGuidesList<-NULL
   for (j in 1:nrow(MySplitByIdDF)) { 
     Temporary<-MySplitByIdDF[j,]
     SelectedGuide<-ifelse(CheckTheGC(Temporary$GC_G3), Temporary$Guide3, 
                           ifelse(CheckTheGC(Temporary$GC_G2), Temporary$Guide2, 
-                                 ifelse(CheckTheGC(Temporary$GC_G1),Temporary$Guide1, "DoNotUse")))
+                                 ifelse(CheckTheGC(Temporary$GC_G1),
+                                        Temporary$Guide1, "DoNotUse")))
     GuideDF2<-data.frame(SelectedGuide,Temporary$GeneProduct, 
                          Temporary$StartofGuideLocation, 
                          Temporary$ID)
     names(GuideDF2)<-c("Guide","GeneProduct", "Location", "ID")
     TestingGuidesList<-rbind(GuideDF2, TestingGuidesList) }
-TestingGuidesList<-TestingGuidesList[order(TestingGuidesList$Location, decreasing = F), ] 
-UseableGuidesList<-subset(TestingGuidesList, 
+  
+  TestingGuidesList<-TestingGuidesList[order(TestingGuidesList$Location, 
+                                           decreasing = F), ] 
+  UseableGuidesList<-subset(TestingGuidesList, 
                           Guide != "DoNotUse", select=Guide:ID)
-TopNGuides<-UseableGuidesList[c(1:GuidesPerGene),]
-TopHits_GuideSelection<-rbind(TopHits_GuideSelection, TopNGuides)
-if (nrow(UseableGuidesList) >=2) {SelectedGuides_Paired_All<-GuideDistance(UseableGuidesList)
-  SelectedGuides_Paired<-SelectedGuides_Paired_All[,1:7]} else {SelectedGuides_Paired<-NULL}
-Pairwise_GuideSelection<-rbind(Pairwise_GuideSelection, SelectedGuides_Paired)}
+  TopNGuides<-UseableGuidesList[c(1:GuidesPerGene),]
+  TopHits_GuideSelection<-rbind(TopHits_GuideSelection, TopNGuides)
+  if (nrow(UseableGuidesList) >=2) {
+    SelectedGuides_Paired_All<-GuideDistance(UseableGuidesList)
+    SelectedGuides_Paired<-SelectedGuides_Paired_All[,1:7]} 
+  else {SelectedGuides_Paired<-NULL}
+  Pairwise_GuideSelection<-rbind(Pairwise_GuideSelection, SelectedGuides_Paired)
+}
 
 
 #cleaning up TopHits guides: removing NAs and non-distinct rows from data frame and removing NGG from each guide 
