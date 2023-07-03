@@ -84,12 +84,22 @@ L_CheckTheGC<- function(x) {
 }
 
 #function to find PAM site
-FindCC<-function (Sequences) 
-{str_locate_all(Sequences,"CC")}
+FindCC<-function (Sequences) {
+  if (PAMless_guides == T) {
+    str_locate_all(Sequences,".")
+  } else {
+    str_locate_all(Sequences,"CC")
+  }
+}
 
 #function to find PAM site (promoter sequence only)
-FindGG<-function (Sequences) 
-{str_locate_all(Sequences,"GG")}
+FindGG<-function (Sequences) {
+  if (PAMless_guides == T) {
+    str_locate_all(Sequences,".")
+  } else {
+    str_locate_all(Sequences,"GG")
+  }
+}
 
 
 #function to filter based on distance into CDS 
@@ -219,7 +229,7 @@ ScrambleBlast <- '__/Users/spotom/Documents/Temp/Guide-Finder-master/GuideFinder
 Similarly, set the path for (optional) scramble guide creation. Scramble guides are 20nt sequences without a match to anywhere in your input genome and can act as a negative control for your experiments. For ScrambleBlast, only change the path to the location of BLASTn on your computer (should be same as "RunBlast" path). (The input and output file names, i.e. BLASTscrambles.fasta and MatchScrambles.blast SHOULD NOT be changed)
 
 ```{r}
-MakeDatabase<-'makeblastdb -in Examples/Complete/mutansexamplefastafile.txt -dbtype nucl -out GenomeDatabase'
+MakeDatabase<-'makeblastdb -in E_coli_DH5alpha/E_coli_CP017100.txt -dbtype nucl -out GenomeDatabase'
 
 RunBlast<-'blastn -task blastn-short -query BLASTguides.fasta -db GenomeDatabase -outfmt 6 -num_threads 4 -dust no -soft_masking false -max_target_seqs 5 -word_size 13 -out MatchGuides.blast'
 
@@ -235,7 +245,7 @@ script to concatenate the several contigs into one
 __Example__: Substitute the bolded information for the name of your FASTA file (kept in working directory)  
 InputGenome<- readDNAStringSet( __"mutansexamplefastafile.txt"__)
 ```{r, tidy=TRUE}
-InputGenome<- readDNAStringSet("Examples/Complete/mutansexamplefastafile.txt")
+InputGenome<- readDNAStringSet("E_coli_DH5alpha/E_coli_CP017100.txt")
 
 ```
 
@@ -243,7 +253,7 @@ InputGenome<- readDNAStringSet("Examples/Complete/mutansexamplefastafile.txt")
 Set the desired putative promoter region, for example, setting "PromoterRegion" to 50 if you want the Guide Finder to search 50 bp upstream of the transcription start site for each gene to identify guides. If you do not want Guide Finder to make guides from the promoter region, set to 0. Set between 0 - 100. Do not set above 100 bp. 
 ```{r}
 
-PromoterRegion<-50
+PromoterRegion<-0
 
 SubtractProm<-function(x) {
   x - PromoterRegion
@@ -277,7 +287,7 @@ __Example__: Substitute the bolded information for the GenBank Accession # for y
 GenBankInfo<- readGenBank(GBAccession( __"AE014133.2"__ ))   
 ```{r,tidy=TRUE}
 #retrieves annotation from GenBank, called by accession
-GenBankInfo<- readGenBank(GBAccession("AE014133.2")) 
+GenBankInfo<- readGenBank(GBAccession("CP017100.1")) 
 #from annotated file, retrieves coding sequence information
 CDSInfoDF<-data.frame(attr(GenBankInfo, "cds")) 
 ```
@@ -319,19 +329,21 @@ Set the following:
  * __Test_bad_seed__ : Set to TRUE or FALSE, if you want to turn this function on or off
  *__Bad_seed__: If you want to remove sequences with a "bad seed", add the sequences here, in quotations 
  *__Test_RE__: Set to TRUE or FALSE, if you want to turn this function on or off
- *__RE_site__ If you want to remove sequences with a "bad seed", add the sequences here 
+ *__RE_site__ If you want to remove sequences with a "bad seed", add the sequences here
+ *__PAMless_guides__: Set to TRUE or FALSE, if you want to include guides made from any PAM site (FALSE will search for NGG guides only)
 
 ```{r,tidy=TRUE}
 
-N <- 15 
+N <- 20 
 GC_Min<-.35
 DistanceAsPercentageofCDS<-.50
-GuidesPerGene<-5
+GuidesPerGene<-10
 DistbtGuides<-100
 Test_bad_seed <- TRUE 
 Bad_seed <- "ACCCA"  
 Test_RE <- FALSE 
 RE_site <- "GGTCTC" 
+PAMless_guides <- TRUE
 
 ```
 
@@ -345,8 +357,8 @@ RE_site <- "GGTCTC"
     each of the genes you want to select. GenesToSelect<-c( __"SMU_01"__, __"SMU_02"__, __"SMU_05"__)
 
 ```{r,tidy=TRUE}
-GenesToSelect<-c("SMU_01", "SMU_03")
-ManualSelection<-FALSE
+GenesToSelect<-c("NEB5A_00995", "NEB5A_00940", "NEB5A_19010", "NEB5A_16190", "NEB5A_20195", "NEB5A_04095", "NEB5A_17070")
+ManualSelection<-TRUE
 ```
 
 ***
@@ -643,37 +655,39 @@ MakeGuidesList <- function(r, N){
   data.frame(Guide1_P,Guide2_P, Guide3_P, NewDF3,DistanceIntoCDS_AsPercentage,ID, Start)
 }
 
-if (OPTS.UseParallel == TRUE) {
-  require(parallel)
-  cl <- makeCluster(OPTS.Cores)
-  AllGuidesListPromoter <- parApply(cl,Prom_AllGuidesLocation, 1, MakeGuidesList, OPTS.N)
-  stopCluster(cl)
+if (length(Prom_AllGuidesLocation) != 0) {
   
-} else {
-  PromoterAllGuidesList <- apply(Prom_AllGuidesLocation, 1, MakeGuidesList, OPTS.N)}
+  if (OPTS.UseParallel == TRUE) {
+    require(parallel)
+    cl <- makeCluster(OPTS.Cores)
+    AllGuidesListPromoter <- parApply(cl,Prom_AllGuidesLocation, 1, MakeGuidesList, OPTS.N)
+    stopCluster(cl)
+    
+  } else {
+    PromoterAllGuidesList <- apply(Prom_AllGuidesLocation, 1, MakeGuidesList, OPTS.N)}
+    
   
-
-#rbindlist function takes the list of data frames and converts it into one list
-Promoter_AllGuidesList<-rbindlist(PromoterAllGuidesList)
-names(Promoter_AllGuidesList)<-c("Guide1", "Guide2","Guide3","GeneProduct",
-                                 "DistanceofGuide_AsPercentageofCDS", 
-                                 "ID", "Location") 
-
-#making characters out of factors 
-Promoter_AllGuidesList$Guide1<-as.character(Promoter_AllGuidesList$Guide1)
-Promoter_AllGuidesList$Guide2<-as.character(Promoter_AllGuidesList$Guide2)
-Promoter_AllGuidesList$Guide3<-as.character(Promoter_AllGuidesList$Guide3)
-Promoter_AllGuidesList$GeneProduct<-as.character(Promoter_AllGuidesList$GeneProduct)
-
-#must reverse all guides made from the promoter sequence
-#b/c we took the downstream of GG and we want the upstream of GG
-Promoter_AllGuidesList$Guide1<-lapply(Promoter_AllGuidesList$Guide1, reverse)
-Promoter_AllGuidesList$Guide2<-lapply(Promoter_AllGuidesList$Guide2, reverse)
-Promoter_AllGuidesList$Guide3<-lapply(Promoter_AllGuidesList$Guide3, reverse)
-
-#All the possible guides for promoter + gene body 
-CorrectedGuidesList<-rbind(Promoter_AllGuidesList, CorrectedGuidesList)
-
+  #rbindlist function takes the list of data frames and converts it into one list
+  Promoter_AllGuidesList<-rbindlist(PromoterAllGuidesList)
+  names(Promoter_AllGuidesList)<-c("Guide1", "Guide2","Guide3","GeneProduct",
+                                   "DistanceofGuide_AsPercentageofCDS", 
+                                   "ID", "Location") 
+  
+  #making characters out of factors 
+  Promoter_AllGuidesList$Guide1<-as.character(Promoter_AllGuidesList$Guide1)
+  Promoter_AllGuidesList$Guide2<-as.character(Promoter_AllGuidesList$Guide2)
+  Promoter_AllGuidesList$Guide3<-as.character(Promoter_AllGuidesList$Guide3)
+  Promoter_AllGuidesList$GeneProduct<-as.character(Promoter_AllGuidesList$GeneProduct)
+  
+  #must reverse all guides made from the promoter sequence
+  #b/c we took the downstream of GG and we want the upstream of GG
+  Promoter_AllGuidesList$Guide1<-lapply(Promoter_AllGuidesList$Guide1, reverse)
+  Promoter_AllGuidesList$Guide2<-lapply(Promoter_AllGuidesList$Guide2, reverse)
+  Promoter_AllGuidesList$Guide3<-lapply(Promoter_AllGuidesList$Guide3, reverse)
+  
+  #All the possible guides for promoter + gene body 
+  CorrectedGuidesList<-rbind(Promoter_AllGuidesList, CorrectedGuidesList)
+}
 ```
 
 
@@ -915,10 +929,18 @@ UseableGuides <- GuidesWithoutOffTarget %>%
 
 # Take number of guides per gene as specified in parameters
 # output TopHits_GuideSelection
-TopHits_GuideSelection <- UseableGuides %>%
+
+if (PAMless_guides == TRUE) {
+  TopHits_GuideSelection <- UseableGuides %>%
+  arrange(ID, Location) %>%
+  group_by(ID) %>%
+  slice_sample(n=GuidesPerGene)
+} else {
+  TopHits_GuideSelection <- UseableGuides %>%
   arrange(ID, Location) %>%
   group_by(ID) %>%
   slice_head(n=GuidesPerGene)
+}
 
 #cleaning up TopHits guides: removing NAs and non-distinct rows from data frame and removing NGG from each guide 
 TopHits_GuideSelection<-na.omit(TopHits_GuideSelection) #remove NAs
