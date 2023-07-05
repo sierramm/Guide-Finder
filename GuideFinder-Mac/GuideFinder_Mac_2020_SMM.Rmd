@@ -907,6 +907,7 @@ GuidesHits <- merge(ShortenedGuides, Hits, by="GuideID")
 GuidesHits <- GuidesHits %>%
   mutate(OffTarget = hits>1) %>%
   mutate(StartOfGuideLocation = FilteredGuides6$StartofGuideLocation)
+
 write.csv(GuidesHits, file="GuidesHitsBLAST.csv")
 
 #Create new column in GuidesWithoutOffTargets that contains the IDs as factor
