@@ -5,7 +5,9 @@ output:
   html_document: default
 ---
 
-This program is capable of designing guides targeted to any number of genes in a bacterial genome. For complete genomes, input the GenBank accession number and fasta file. For draft genomes, input the coding sequence coordinates (identified using pre-processing scripts) and fasta file.  Set parameters for guide design, as indicated below. The program will identify genes that did not produce guides and will re-run them with lowered parameters if desired (see "OPTIONAL:" below).  
+This program is capable of designing guides targeted to any number of genes in a bacterial genome. For complete genomes, input the GenBank accession number and fasta file. For draft genomes, input the coding sequence coordinates (identified using pre-processing scripts) and fasta file.  Set parameters for guide design, as indicated below. The program will identify genes that did not produce guides and will re-run them with lowered parameters if desired (see "OPTIONAL:" below). 
+
+Note: This file is adapted from the original GuideFinder R script to allow for designing guides that do not require a PAM site. 
 
 ##
 ##1.Set Working Directory
@@ -23,7 +25,7 @@ __Install Packages__
 These packages need only to be installed once 
 ```{r}
 
-# installing version 3.10 
+# installing version 3.16 (July 2023)
 if (!requireNamespace("BiocManager", quietly = TRUE))
     install.packages("BiocManager")
 BiocManager::install(version = "3.16")
@@ -35,7 +37,7 @@ options(max.print=999999)
 
 ```
 
-had to download an rchived version of refgenome: https://cran.r-project.org/src/contrib/Archive/refGenome/
+had to download an archived version of refgenome: https://cran.r-project.org/src/contrib/Archive/refGenome/
 
 ```{r}
 install.packages("doBy")
@@ -84,6 +86,7 @@ L_CheckTheGC<- function(x) {
 }
 
 #function to find PAM site
+# if searching for PAMless, locates any site. Otherwise, locates "CC" sites.
 FindCC<-function (Sequences) {
   if (PAMless_guides == T) {
     str_locate_all(Sequences,".")
@@ -93,6 +96,7 @@ FindCC<-function (Sequences) {
 }
 
 #function to find PAM site (promoter sequence only)
+# if searching for PAMless, locates any site. Otherwise, locates "GG" sites.
 FindGG<-function (Sequences) {
   if (PAMless_guides == T) {
     str_locate_all(Sequences,".")
@@ -197,9 +201,11 @@ GuideDistance<-function (x) {Df2<-as.matrix(dist(x$Location))
   Df6<-merge(Df5, x, by="Location") %>%
     dplyr::select(PAM_Guide1 = Var1, PAM_Guide2 = Var2, PAM_Dist = value, 
            Guide1 = Guide.x, Guide2 = Guide.y, Gene = GeneProduct.y, ID = ID.y)
-  invisible(Df6)
+  return(Df6)
   }
 
+# commented out because this code is repeated in optional scrambles chunk
+# not necessary here; also causes an issue in running
 #function to make scrambles 
 # ScramblesDF<-NULL
 # for (i in 1:nrow(Scrambles)) {
@@ -218,6 +224,11 @@ GuideDistance<-function (x) {Df2<-as.matrix(dist(x$Location))
 
 ##2.Set BLAST Path & File 
 Set the path for the system command based on the name of your file (e.g. 12228_FASTA.fna ) and the location of BLAST  
+
+If BLAST is not yet installed, follow directions here (Mac): https://www.ncbi.nlm.nih.gov/books/NBK52640/ 
+Make sure to modify commands to match most updated version of BLAST (2.14.0 as of July 2023).
+If desired, modify .bash_profile as explained in configuration section so that BLAST can be called from any directory.
+
 __Example__: Substitute bolded information in MakeDatabase and RunBlast  
 
 MakeDatabase<-' __/Users/spotom/Documents/Temp/Guide-Finder-master/GuideFinder-Mac/makeblastdb__  -in __mutansexamplefastafile.txt__ -dbtype nucl -out GenomeDatabase'  
@@ -251,6 +262,8 @@ InputGenome<- readDNAStringSet("E_coli_DH5alpha/E_coli_CP017100.txt")
 
 ##4. Define Putative Promoter Region 
 Set the desired putative promoter region, for example, setting "PromoterRegion" to 50 if you want the Guide Finder to search 50 bp upstream of the transcription start site for each gene to identify guides. If you do not want Guide Finder to make guides from the promoter region, set to 0. Set between 0 - 100. Do not set above 100 bp. 
+
+If you are searching for PAMless guides, you will get a large number of guides per gene. Unless interested in the promoter region specifically or looking at a specific gene that did not have any guides, consider setting promoter region to 0 to limit the output.
 ```{r}
 
 PromoterRegion<-0
@@ -357,12 +370,15 @@ PAMless_guides <- TRUE
     each of the genes you want to select. GenesToSelect<-c( __"SMU_01"__, __"SMU_02"__, __"SMU_05"__)
 
 ```{r,tidy=TRUE}
+# E. coli homologs from high confidence essential genes identified in Spoto et al. https://journals.asm.org/doi/10.1128/mbio.02632-22#tabS1 
 GenesToSelect<-c("NEB5A_00995", "NEB5A_00940", "NEB5A_19010", "NEB5A_16190", "NEB5A_20195", "NEB5A_04095", "NEB5A_17070")
 ManualSelection<-TRUE
 ```
 
 ***
 ## __OPTIONAL: Lower thresholds to find guides for genes that did not produce any with primary thresholds__  
+
+If running PAMless search, you will likely get back a large number of genes, so this option may not be necessary.
 
 __Enter lowered thresholds below__
 Change as desired: 
@@ -503,8 +519,10 @@ OnlySequences$Promoter<-lapply(OnlySequences$CDS,SubsetPromoter) #subset promote
 ```
 
 
-__Finding PAM sites__  
-Identifies PAM sites in the gene body and the promoter. Guides can be targeted to the non-template strand *or* the template strand in the promoter region. However, guides can only be designed to target the non-template strand in the gene body. The first loop looks to identify potential PAM sites in the gene body and promoter to create guides that target non-template strand. The second loop identifies PAM sites in the promoter to create guides targeted to the template strand. 
+__Finding Guide sites__  
+Identifies guide sites in the gene body and the promoter. Guides can be targeted to the non-template strand *or* the template strand in the promoter region. However, guides can only be designed to target the non-template strand in the gene body. The first loop looks to identify potential guide sites in the gene body and promoter to create guides that target non-template strand. The second loop identifies guide sites in the promoter to create guides targeted to the template strand. 
+
+If PAMless_guides is TRUE (set by user in parameters), then this will locate every possible guide site. Otherwise, it will locate NGG/PAM sites. 
 ```{r, eval=FALSE}
 #Find PAM sites (searching for 'CC') on bottom strand for promoter + gene body 
 AllGuidesLocation<-NULL
@@ -929,7 +947,7 @@ UseableGuides <- GuidesWithoutOffTarget %>%
 
 # Take number of guides per gene as specified in parameters
 # output TopHits_GuideSelection
-
+# if selecting PAMless guides, takes a random selection; otherwise takes guides closest to start of gene
 if (PAMless_guides == TRUE) {
   TopHits_GuideSelection <- UseableGuides %>%
   arrange(ID, Location) %>%
@@ -1065,8 +1083,8 @@ write.csv(GenesWithoutGuide, file="GenesWithoutGuide.csv")
 ```
 
 
-__OPTIONAL: Make Scramble sequences, which are 20 nt guide sequence that can act as a negative control. Scramble sequences are 
-blasted against genome to make sure they do not target anywhere__ 
+__OPTIONAL: Make Scramble sequences__
+Scramble sequences are 20 nt guide sequence that can act as a negative control. Scramble sequences are blasted against genome to make sure they do not target anywhere.
 The current code creates ~1000 random sequences and then removes anything with a match in the genome
 We have found that this generally results in ~100 identified scramble guides 
 If you would like to generate more scrambles (due to many hits in the genome, or you desire >100 scrambles), adjust the first line of code in this chunk, which creates a dataframe of 1000 rows in length 
@@ -1144,6 +1162,10 @@ Also outputs a file that contains overall information about genes created with p
 
 _Note_:  
 Genes that did not produce guides is defied as genes that did not produce any gene pairs in the pairwise comparison. This includes genes that did not produce any useable guides at all _and_ genes that produced too few guides or guides too close together to be used as paired guides)
+
+If running PAMless search, you will likely get back a large number of genes, so this option may not be necessary.
+
+Note: This chunk has not yet been updated to reflect changes to functions, filtering, and guide selection in previous chunks. 
 
 ```{r, eval=FALSE}
 FeatureGuides_ID<-GuidesWithFeatures$ID

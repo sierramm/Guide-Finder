@@ -7,6 +7,8 @@ output:
 
 This program is capable of designing guides targeted to any number of genes in a bacterial genome. For complete genomes, input the GenBank accession number and fasta file. For draft genomes, input the coding sequence coordinates (identified using pre-processing scripts) and fasta file.  Set parameters for guide design, as indicated below. The program will identify genes that did not produce guides and will re-run them with lowered parameters if desired (see "OPTIONAL:" below).  
 
+Note: This file is adapted from the original GuideFinder R script to use for the E. coli DH5alpha genome (GenBank CP017100.1), found here: https://www.ncbi.nlm.nih.gov/nuccore/CP017100 
+
 ##
 ##1.Set Working Directory
 The working directory should be where your FASTA file is stored & where all files will output to 
@@ -23,7 +25,7 @@ __Install Packages__
 These packages need only to be installed once 
 ```{r}
 
-# installing version 3.10 
+# installing version 3.16 (July 2023)
 if (!requireNamespace("BiocManager", quietly = TRUE))
     install.packages("BiocManager")
 BiocManager::install(version = "3.16")
@@ -35,7 +37,7 @@ options(max.print=999999)
 
 ```
 
-had to download an rchived version of refgenome: https://cran.r-project.org/src/contrib/Archive/refGenome/
+had to download an archived version of refgenome: https://cran.r-project.org/src/contrib/Archive/refGenome/
 
 ```{r}
 install.packages("doBy")
@@ -206,6 +208,9 @@ names(Df6)<-c("PAM_Guide1", "PAM_Guide2", "PAM_Dist", "Guide1","Guide2","Gene","
 print(Df6)
 }
 
+
+# commented out because this code is repeated in optional scrambles chunk
+# not necessary here; also causes an issue in running
 #function to make scrambles 
 # ScramblesDF<-NULL
 # for (i in 1:nrow(Scrambles)) {
@@ -224,6 +229,11 @@ print(Df6)
 
 ##2.Set BLAST Path & File 
 Set the path for the system command based on the name of your file (e.g. 12228_FASTA.fna ) and the location of BLAST  
+
+If BLAST is not yet installed, follow directions here (Mac): https://www.ncbi.nlm.nih.gov/books/NBK52640/ 
+Make sure to modify commands to match most updated version of BLAST (2.14.0 as of July 2023).
+If desired, modify .bash_profile as explained in configuration section so that BLAST can be called from any directory.
+
 __Example__: Substitute bolded information in MakeDatabase and RunBlast  
 
 MakeDatabase<-' __/Users/spotom/Documents/Temp/Guide-Finder-master/GuideFinder-Mac/makeblastdb__  -in __mutansexamplefastafile.txt__ -dbtype nucl -out GenomeDatabase'  
