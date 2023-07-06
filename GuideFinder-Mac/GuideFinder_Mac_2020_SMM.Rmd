@@ -9,11 +9,13 @@ This program is capable of designing guides targeted to any number of genes in a
 
 ##
 ##1.Set Working Directory
-The working directory should be where your FASTA file nis stored & where all files will output to 
+The working directory should be where your FASTA file is stored & where all files will output to 
 
 ```{r setup}
-knitr::opts_knit$set(root.dir = '/Users/spotom/Desktop/GF_test/strep')
-setwd ('/Users/spotom/Desktop/GF_test/strep')
+#install.packages("knitr")
+
+knitr::opts_knit$set(root.dir = '/Users/mellos/Documents/GitHub/Guide-Finder/GuideFinder-Mac')
+setwd ('/Users/mellos/Documents/GitHub/Guide-Finder/GuideFinder-Mac')
 ```
 
 
@@ -24,7 +26,7 @@ These packages need only to be installed once
 # installing version 3.10 
 if (!requireNamespace("BiocManager", quietly = TRUE))
     install.packages("BiocManager")
-BiocManager::install(version = "3.10")
+BiocManager::install(version = "3.16")
 
 # installing packages from Bioconductor 
 BiocManager::install(c("Biostrings", "genbankr","annotate","stringr","data.table","seqinr","ape","refGenome","rentrez","reshape2","dplyr","purrr","stringi"))
@@ -33,6 +35,12 @@ options(max.print=999999)
 
 ```
 
+had to download an rchived version of refgenome: https://cran.r-project.org/src/contrib/Archive/refGenome/
+
+```{r}
+install.packages("doBy")
+install.packages("~/Downloads/refGenome_1.7.7.tar.gz", repos = NULL, type = "source")
+```
 
 __Loading Packages__
 Packages need to be loaded each time the program is run 
@@ -52,11 +60,13 @@ suppressPackageStartupMessages(library(data.table))
 suppressPackageStartupMessages(library(dplyr))
 suppressPackageStartupMessages(library(purrr))
 suppressPackageStartupMessages(library(stringi))
+suppressPackageStartupMessages(library(tidyr))
+suppressPackageStartupMessages(library(dplyr))
 
 ```
 
 __Lists functions that will be used during guide design__
-No edits need to be made to this section; this chuck justs lists the functions that are used later in the script
+No edits need to be made to this section; this chunk just lists the functions that are used later in the script
 ```{r,tidy=TRUE}
 
 #function to test if GC of guide meets threshold 
@@ -77,7 +87,7 @@ L_CheckTheGC<- function(x) {
 FindCC<-function (Sequences) 
 {str_locate_all(Sequences,"CC")}
 
-#function to find PAM site (promotor sequence only)
+#function to find PAM site (promoter sequence only)
 FindGG<-function (Sequences) 
 {str_locate_all(Sequences,"GG")}
 
@@ -106,6 +116,10 @@ TestingStrings<-function(x) {
   else {
     print("NoneDetected")
   }
+}
+
+TestingStrings_test <- function(x) {
+  str_detect(x,"AAAA")
 }
 
 #function to filter based on if the guide contains a string of TTTT
@@ -193,15 +207,15 @@ print(Df6)
 }
 
 #function to make scrambles 
-ScramblesDF<-NULL
-for (i in 1:nrow(Scrambles)) {
-  Row<-Scrambles[i,]
-  seq = sample(DNA_ALPHABET[1:4], size=20, replace=TRUE)
-  seq = paste(seq, collapse="")
-  Row<-seq
-  ScramblesDF<-rbind(ScramblesDF,Row)
-}
-ScramblesDF_2<-data.frame(ScramblesDF, stringsAsFactors = FALSE)
+# ScramblesDF<-NULL
+# for (i in 1:nrow(Scrambles)) {
+#   Row<-Scrambles[i,]
+#   seq = sample(DNA_ALPHABET[1:4], size=20, replace=TRUE)
+#   seq = paste(seq, collapse="")
+#   Row<-seq
+#   ScramblesDF<-rbind(ScramblesDF,Row)
+# }
+# ScramblesDF_2<-data.frame(ScramblesDF, stringsAsFactors = FALSE)
 
 
 
@@ -221,11 +235,11 @@ ScrambleBlast <- '__/Users/spotom/Documents/Temp/Guide-Finder-master/GuideFinder
 Similarly, set the path for (optional) scramble guide creation. Scramble guides are 20nt sequences without a match to anywhere in your input genome and can act as a negative control for your experiments. For ScrambleBlast, only change the path to the location of BLASTn on your computer (should be same as "RunBlast" path). (The input and output file names, i.e. BLASTscrambles.fasta and MatchScrambles.blast SHOULD NOT be changed)
 
 ```{r}
-MakeDatabase<-'/Users/spotom/Documents/Temp/makeblastdb -in concatenatedfastafile.txt -dbtype nucl -out GenomeDatabase'
+MakeDatabase<-'makeblastdb -in Complete/mutansexamplefastafile.txt -dbtype nucl -out GenomeDatabase'
 
-RunBlast<-'/Users/spotom/Documents/Temp/blastn -task blastn-short -query BLASTguides.fasta -db GenomeDatabase -outfmt 6 -num_threads 4 -dust no -soft_masking false -max_target_seqs 5 -word_size 13 -out MatchGuides.blast'
+RunBlast<-'blastn -task blastn-short -query BLASTguides.fasta -db GenomeDatabase -outfmt 6 -num_threads 4 -dust no -soft_masking false -max_target_seqs 5 -word_size 13 -out MatchGuides.blast'
 
-ScrambleBlast<-'/Users/spotom/Documents/Temp/blastn -task blastn-short -query BLASTscrambles.fasta -db GenomeDatabase -outfmt 6 -num_threads 4 -dust no -soft_masking false -max_target_seqs 5 -word_size 11 -perc_identity .9 -out MatchScrambles.blast'
+ScrambleBlast<-'blastn -task blastn-short -query BLASTscrambles.fasta -db GenomeDatabase -outfmt 6 -num_threads 4 -dust no -soft_masking false -max_target_seqs 5 -word_size 11 -perc_identity .9 -out MatchScrambles.blast'
 
 ```
 
@@ -237,7 +251,7 @@ script to concatenate the several contigs into one
 __Example__: Substitute the bolded information for the name of your FASTA file (kept in working directory)  
 InputGenome<- readDNAStringSet( __"mutansexamplefastafile.txt"__)
 ```{r, tidy=TRUE}
-InputGenome<- readDNAStringSet("strep_py.fasta")
+InputGenome<- readDNAStringSet("E_coli_DH5alpha/E_coli_CP017100.fasta")
 
 ```
 
@@ -245,7 +259,7 @@ InputGenome<- readDNAStringSet("strep_py.fasta")
 Set the desired putative promoter region, for example, setting "PromoterRegion" to 50 if you want the Guide Finder to search 50 bp upstream of the transcription start site for each gene to identify guides. If you do not want Guide Finder to make guides from the promoter region, set to 0. Set between 0 - 100. Do not set above 100 bp. 
 ```{r}
 
-PromoterRegion<-0
+PromoterRegion<-50
 
 SubtractProm<-function(x) {
   x - PromoterRegion
@@ -275,19 +289,19 @@ CompleteGenome<- TRUE
 Input GenBank Accession Number. Will retrieve the annotated genome from GenBank (called by accession #, e.g.AE015929.1 for *Staphylococcus epidermidis*).   
 From the annotated file, will retrieve the coding sequence information.  
 *If using a draft genome, do not run this chunk of code.*  
-__Example__: Subsitute the bolded information for the GenBank Acession # for your genome of interest.   
+__Example__: Substitute the bolded information for the GenBank Accession # for your genome of interest.   
 GenBankInfo<- readGenBank(GBAccession( __"AE014133.2"__ ))   
 ```{r,tidy=TRUE}
 #retrieves annotation from GenBank, called by accession
-GenBankInfo<- readGenBank(GBAccession("AL009126.3")) 
+GenBankInfo<- readGenBank(GBAccession("AE014133.2")) 
 #from annotated file, retrieves coding sequence information
 CDSInfoDF<-data.frame(attr(GenBankInfo, "cds")) 
 ```
 
 ##5B.FOR DRAFT GENOMES ONLY: 
-Input pre-processed input file (cotaining product/gene name, strand type, and start/end coordinates)
+Input pre-processed input file (containing product/gene name, strand type, and start/end coordinates)
 This loop takes the gene coordinates and modifies them to include the putative promoter region 
-__Example__: Subsitute the bolded information for the name of your file which contains the gene coordinates (output from custom or supplied pre-processing scripts). File should be kept in the working directory.  
+__Example__: Substitute the bolded information for the name of your file which contains the gene coordinates (output from custom or supplied pre-processing scripts). File should be kept in the working directory.  
 NewCoordinatesDF<-fread( __"DrafGenome_NewCoordinates.csv"__ )  
 *if using a complete genome/GenBank Accession #, do not run this chunk of code*  
 ```{r,tidy=TRUE}
@@ -354,7 +368,7 @@ ManualSelection<-FALSE
 ***
 ## __OPTIONAL: Lower thresholds to find guides for genes that did not produce any with primary thresholds__  
 
-__Enter lowered threseholds below__
+__Enter lowered thresholds below__
 Change as desired: 
 
 * __GC_Min__ : GC minimum 
@@ -380,9 +394,9 @@ __Example__: Substitute bolded information in Re_RunBlast and Re_RunBlast_Lowere
 Re_RunBlast<-' __/Users/spotom/Documents/Temp/Guide-Finder-master/GuideFinder-Mac/blastn__ -task blastn-short -query re_BLASTguides.fasta -db GenomeDatabase -outfmt 6 -num_threads 4 -dust no -soft_masking false -max_target_seqs 5 -word_size 13 -out re_MatchGuides.blast'  
 Re_RunBlast_Lowered<-' __/Users/spotom/Documents/Temp/Guide-Finder-master/GuideFinder-Mac/blastn__ ncbi-blast-2.6.0+/bin/blastn -task blastn-short -query re_BLASTguides.fasta -db GenomeDatabase -outfmt 6 -num_threads 4 -dust no -soft_masking false -max_target_seqs 5 -word_size 14 -out re_MatchGuides.blast'  
 ```{r,tidy=TRUE}
-Re_RunBlast<-'/Users/spotom/Documents/Temp/Guide-Finder-master/GuideFinder-Mac/blastn -task blastn-short -query re_BLASTguides.fasta -db GenomeDatabase -outfmt 6 -num_threads 4 -dust no -soft_masking false -max_target_seqs 5 -word_size 13 -out re_MatchGuides.blast'
-#If selecting optio to relax off-target searches 
-Re_RunBlast_Lowered<-'/Users/spotom/Documents/Temp/Guide-Finder-master/GuideFinder-Mac/blastn -task blastn-short -query re_BLASTguides.fasta -db GenomeDatabase -outfmt 6 -num_threads 4 -dust no -soft_masking false -max_target_seqs 5 -word_size 14 -out re_MatchGuides.blast'
+Re_RunBlast<-'blastn -task blastn-short -query re_BLASTguides.fasta -db GenomeDatabase -outfmt 6 -num_threads 4 -dust no -soft_masking false -max_target_seqs 5 -word_size 13 -out re_MatchGuides.blast'
+#If selecting option to relax off-target searches 
+Re_RunBlast_Lowered<-'blastn -task blastn-short -query re_BLASTguides.fasta -db GenomeDatabase -outfmt 6 -num_threads 4 -dust no -soft_masking false -max_target_seqs 5 -word_size 14 -out re_MatchGuides.blast'
 ```
 
 
@@ -392,7 +406,7 @@ __All user parameters are set above__
 Code is commented so that the user may follow along, but no further user inputs or edits are needed. 
 
 __For complete genomes, subsets genes if desired. IDs coordinates & alters them to include putative promoter sequence__  
-This chunk of code is only performed on complete genomes, since the program identifies the coding sequence + promoter region from complete genomes using coordinates from the annotated Genbank file. By telling the program only to run the following if CompleteGenome == TRUE, this part is skipped if the user is utilizing a draft genome (specified by "CompelteGenome<-False"", above). For complete genomes, creates NewCoordinatesDF (for draft genomes, this data frame was made during preprocessing)
+This chunk of code is only performed on complete genomes, since the program identifies the coding sequence + promoter region from complete genomes using coordinates from the annotated Genbank file. By telling the program only to run the following if CompleteGenome == TRUE, this part is skipped if the user is utilizing a draft genome (specified by "CompleteGenome<-False"", above). For complete genomes, creates NewCoordinatesDF (for draft genomes, this data frame was made during preprocessing)
 ```{r, eval=FALSE,tidy=TRUE}
 
 if (CompleteGenome == TRUE) {
@@ -546,7 +560,7 @@ for (i in 1:NumberofRows) {
 ```
 
 
-__Making guides given the PAM sites identifed above__   
+__Making guides given the PAM sites identified above__   
 The first loop makes guides targeted to non-template strand for PAM sites in promoter and gene body 
 The second loop makes guides targeted to the template strand for PAM sites in the promoter 
 ```{r, eval=FALSE}
@@ -736,11 +750,12 @@ write.csv(CompleteGuidesList, file="CompleteGuidesList.csv")
 
 __Filtering guides__  
 Filtering guides by all of the parameters-- getting rid of those that don't meet the set thresholds.    
-Using the large guide with features data frame, begin to filter guides by GC content, distance into CDS, and if the guide has a homopolymer string. The output this is a data frame like GuidesWithFeatures but with an N/A in place of a value if that value does not meet the theshold we set; use NA to filter out guides
+Using the large guide with features data frame, begin to filter guides by GC content, distance into CDS, and if the guide has a homopolymer string. The output this is a data frame like GuidesWithFeatures but with an N/A in place of a value if that value does not meet the threshold we set; use NA to filter out guides
 ```{r, eval=FALSE}
 SubsetFeatureGuides<-list(GuidesWithFeatures[,"ID"])
 
 # Run the guides through the various filters (don't filter out yet, just assign T/F)
+Sys.time()
 FilteredGuides<-cbind(GuidesWithFeatures$GeneProduct,
                       GuidesWithFeatures$Guide1,
                       GuidesWithFeatures$GC_G1, 
@@ -762,6 +777,13 @@ FilteredGuides<-cbind(GuidesWithFeatures$GeneProduct,
                       lapply(GuidesWithFeatures$Guide3,TestingRE),
                       lapply(GuidesWithFeatures$DistanceofFGuide_AsPercentageofCDS,TestingDistance), 
                       GuidesWithFeatures$StartofGuide)
+Sys.time()
+
+FilteredGuides_test <-cbind(GuidesWithFeatures$GeneProduct,
+                      GuidesWithFeatures$Guide1,
+                      GuidesWithFeatures$GC_G1, 
+                      lapply(GuidesWithFeatures$Guide1,TestingStrings_test))
+
 
 # make data frame
 FilteredGuides<-data.frame(FilteredGuides)
@@ -801,7 +823,7 @@ FilteredGuides2<-subset(FilteredGuides1,
 FilteredGuides3<-subset(FilteredGuides2, 
                         DistanceofGuide_AsPercentageofCDS != "N/A", 
                         select=ID:StartofGuideLocation)
-#remove thoes with strings of As 
+#remove those with strings of As 
 FilteredGuides4<-subset(FilteredGuides3, G3_AString == "NoneDetected", 
                         select=ID:StartofGuideLocation)
 
@@ -833,7 +855,7 @@ FilteredGuides6$GuideID<-1:nrow(FilteredGuides6) #add GUIDE ID to each guide
 
 __Searching for off target effects__  
 BLASTing guides against genome to look for off-target effects. Removes guides that hit more than once; outputs list of guides that have no off target effects and meet all thresholds.    
-The output document (CompleteFilteredGuides) contains all potentially useable guides for a gene. The next step picks the desired # of guides/gene but the document output here may also be useful if a user wanted to manually select guides from a list of potential guides.
+The output document (CompleteFilteredGuides) contains all potentially usable guides for a gene. The next step picks the desired # of guides/gene but the document output here may also be useful if a user wanted to manually select guides from a list of potential guides.
 ```{r, eval=FALSE,tidy=TRUE}
 #shorten guide to 12 nt closest to PAM
 #BLAST this shortened guide against entire genome
@@ -880,6 +902,14 @@ OneHit<-Hits[which(Hits$hits == 1),]
 GuidesWithoutOffTarget<-merge(OneHit, FilteredGuides6, by="GuideID")
 GuidesWithoutOffTarget<-GuidesWithoutOffTarget[order(GuidesWithoutOffTarget$ID, decreasing = F),]
 
+#Create file that indicates which guides have off target effects
+GuidesHits <- merge(ShortenedGuides, Hits, by="GuideID")
+GuidesHits <- GuidesHits %>%
+  mutate(OffTarget = hits>1) %>%
+  mutate(StartOfGuideLocation = FilteredGuides6$StartofGuideLocation)
+
+write.csv(GuidesHits, file="GuidesHitsBLAST.csv")
+
 #Create new column in GuidesWithoutOffTargets that contains the IDs as factor
 #must be factors to use function that splits data frame by IDs 
 IDS5<-data.frame(unlist(GuidesWithoutOffTarget$ID))
@@ -909,7 +939,7 @@ write.csv(CompleteFilteredGuides, file="CompleteFilteredGuides.csv")
 
 
 __Final guide selection__  
-Final guide selection; this is based on length and meeting GC threshold; if longest guide (guide3) at PAM site meets the GC threshold, it's chosen. If not, checks shorter guides at that PAM site. If none at that site, continues down list. Outputs top N guides per gene (selected by user) and calcualtes the distance between the guides; guide pairs that are more distant than user set-threshold (Distbtguides) are output as accetable guide pairs for double knockdown. 
+Final guide selection; this is based on length and meeting GC threshold; if longest guide (guide3) at PAM site meets the GC threshold, it's chosen. If not, checks shorter guides at that PAM site. If none at that site, continues down list. Outputs top N guides per gene (selected by user) and calculates the distance between the guides; guide pairs that are more distant than user set-threshold (Distbtguides) are output as acceptable guide pairs for double knockdown. 
 
 Two outputs: 
 
@@ -917,7 +947,7 @@ Two outputs:
     + Selects N number of guides closest to the start of each gene 
     + TopHits_Guides
   
-* Selects guide pairs sutiable for double knockdown (in that the distance between the guides is greater than the minimum distance set by the user(DistbtnGuides)
+* Selects guide pairs suitable for double knockdown (in that the distance between the guides is greater than the minimum distance set by the user(DistbtnGuides)
     + Pairwise_Guides
   
 ```{r, eval=FALSE}
@@ -988,13 +1018,17 @@ Pairwise_GuideSelection2<-replace(Pairwise_GuideSelection2, 5,
 Pairwise_GuideSelection2<-replace(Pairwise_GuideSelection2,4, 
                                  RemoveNGG(Pairwise_GuideSelection2$Guide1)) 
 Pairwise_GuideSelection2<-replace(Pairwise_GuideSelection2,5, 
-                                 RemoveNGG(Pairwise_GuideSelection2$Guide2)) 
+                                 RemoveNGG(Pairwise_GuideSelection2$Guide2))
+
+# create the output files
+write.csv(TopHits_GuideSelection, file = "TopHits_Guides.csv")
+write.csv(Pairwise_GuideSelection2, file = "Pairwise_Guides.csv")
 
 ```
 
 
 __Genes without guides__  
-Identifies genes that did not produce any usabl Top Hits guides. This list is output in a .csv document called "GenesWithoutGuides" Thesholds can be lowered and this list of genes run through again. To identify and re-run genes that did not produce any PAIRED guides, then run the commented out code in the section below. 
+Identifies genes that did not produce any usable Top Hits guides. This list is output in a .csv document called "GenesWithoutGuides" Thresholds can be lowered and this list of genes run through again. To identify and re-run genes that did not produce any PAIRED guides, then run the commented out code in the section below. 
 ```{r, eval=FALSE,tidy=TRUE}
 
 # Identify genes that don't produce any Top Hits guides with the primary thresholds 
