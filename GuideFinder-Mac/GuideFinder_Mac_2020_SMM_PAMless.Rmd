@@ -378,11 +378,14 @@ ManualSelection<-TRUE
 ***
 ## __OPTIONAL: Lower thresholds to find guides for genes that did not produce any with primary thresholds__  
 
+If not choosing to run lower thresholds, set Run_Lowered_Thresholds to FALSE and then run this chunk. 
+
 If running PAMless search, you will likely get back a large number of genes, so this option may not be necessary.
 
 __Enter lowered thresholds below__
 Change as desired: 
 
+* __Run_Lowered_Thresholds__ : If looking for guides with lowered thresholds, set to TRUE. Otherwise set to FALSE.
 * __GC_Min__ : GC minimum 
 * __DistanceAsPercentageofCDS__ : maximum distance from the transcription start site 
 * __KeepGuidesWithString__ : keep guides that contain a string of As (4 or more)? 
@@ -393,11 +396,28 @@ Change as desired:
     + Will search for a perfect match of the first 14 nt closest to the PAM site (rather than perfect match of 12 set as default in primary thresholds).
     + If a relaxed search is desired, set to TRUE. Otherwise, set to FALSE.
 ```{r,tidy=TRUE}
+Run_Lowered_Thresholds <- FALSE
+
 L_GC_Min<-.30
 L_DistanceAsPercentageofCDS<-.50
 KeepGuidesWithString<-TRUE
 KeepGuidesWithString_T<-TRUE
 LowerOffTarget<-TRUE
+
+# Create file with parameters
+Parameters_Df <- data.frame(Genome = GenomeName, PAMless = PAMless_guides, Promoter_Length = PromoterRegion, Length_bp = N, 
+                            GC_min = GC_Min, Dist_from_TSS = DistanceAsPercentageofCDS, Dist_bw_Pairs = DistbtGuides,
+                            Test_Bad_Seed = Test_bad_seed, Bad_Seed_Seq = Bad_seed, Test_RE_Site = Test_RE,
+                            RE_Seq = RE_site, Lowered_Thresholds = Run_Lowered_Thresholds, Lower_GC_Min = L_GC_Min, 
+                            Lower_Dist_from_TSS = L_DistanceAsPercentageofCDS, Keep_A_String = KeepGuidesWithString, 
+                            Keep_T_String = KeepGuidesWithString_T, Lower_Off_Target = LowerOffTarget)
+
+if (Run_Lowered_Thresholds == F) {
+  Parameters_Df[,c("Lower_GC_Min", "Lower_Dist_from_TSS", "Keep_A_String", "Keep_T_String", "Lower_Off_Target")] <- NA
+}
+
+write.csv(Parameters_Df, file = "Sepi5_try1_Parameters.csv")
+
 ```
 
 __Set the path__ 
@@ -945,6 +965,9 @@ UseableGuides <- GuidesWithoutOffTarget %>%
   filter(Guide != "DoNotUse") %>%
   dplyr::select(Guide, GeneProduct, Location = StartofGuideLocation, ID)
 
+# write output for all useable guides
+write.csv(UseableGuides, "AllUseableGuides.csv")
+
 # Take number of guides per gene as specified in parameters
 # output TopHits_GuideSelection
 # if selecting PAMless guides, takes a random selection; otherwise takes guides closest to start of gene
@@ -1169,41 +1192,29 @@ Note: This chunk has not yet been updated to reflect changes to functions, filte
 
 ```{r, eval=FALSE}
 FeatureGuides_ID<-GuidesWithFeatures$ID
-GuidesWithThresholds<-cbind(GuidesWithFeatures$GeneProduct,
-                      GuidesWithFeatures$Guide1,
-                      GuidesWithFeatures$GC_G1, 
-                      lapply(GuidesWithFeatures$Guide1,TestingStrings), 
-                      lapply(GuidesWithFeatures$Guide1,TestingStrings_T),
-                      lapply(GuidesWithFeatures$Guide1,TestingSeed), 
-                      lapply(GuidesWithFeatures$Guide1,TestingRE),
-                      GuidesWithFeatures$Guide2, 
-                      GuidesWithFeatures$GC_G2,
-                      lapply(GuidesWithFeatures$Guide2,TestingStrings),
-                      lapply(GuidesWithFeatures$Guide2,TestingStrings_T),
-                      lapply(GuidesWithFeatures$Guide2,TestingSeed),
-                      lapply(GuidesWithFeatures$Guide2,TestingRE),
-                      GuidesWithFeatures$Guide3,
-                      GuidesWithFeatures$Gc_G3,
-                      lapply(GuidesWithFeatures$Guide3,TestingStrings), 
-                      lapply(GuidesWithFeatures$Guide3,TestingStrings_T),
-                      lapply(GuidesWithFeatures$Guide3,TestingSeed), 
-                      lapply(GuidesWithFeatures$Guide3,TestingRE),
-                      lapply(GuidesWithFeatures$DistanceofFGuide_AsPercentageofCDS,TestingDistance), 
-                      GuidesWithFeatures$StartofGuide)
 
-GuidesWithThresholds<-data.frame(GuidesWithThresholds)  
+GuidesWithThresholds <- GuidesWithFeatures %>%
+  mutate(G1_AString = TestingStrings(Guide1),
+         G2_AString = TestingStrings(Guide2),
+         G3_AString = TestingStrings(Guide3),
+         G1_TString = TestingStrings_T(Guide1),
+         G2_TString = TestingStrings_T(Guide2),
+         G3_TString = TestingStrings_T(Guide3),
+         G1_Seed = TestingSeed(Guide1),
+         G2_Seed = TestingSeed(Guide2),
+         G3_Seed = TestingSeed(Guide3),
+         G1_RE = TestingRE(Guide1),
+         G2_RE = TestingRE(Guide2),
+         G3_RE = TestingRE(Guide3)) %>%
+  data.frame() %>%
+  dplyr::select(ID, GeneProduct, Guide1, GC_G1, G1_AString, G1_TString, G1_Seed, G1_RE,
+         Guide2, GC_G2, G2_AString, G2_TString, G2_Seed, G2_RE,
+         Guide3, GC_G3=Gc_G3, G3_AString, G3_TString, G3_Seed, G3_RE,
+         DistanceofGuide_AsPercentageofCDS = DistanceofFGuide_AsPercentageofCDS, StartofGuideLocation = StartofGuide)
 
-
-#binding guide IDs to data frame
-GuidesWithThresholds<-cbind(FeatureGuides_ID,GuidesWithThresholds) 
-names(GuidesWithThresholds)<-c("ID","GeneProduct","Guide1","GC_G1",
-                                 "G1_AString","G1_TString","G1_Seed", "G1_RE","Guide2","GC_G2",
-                                 "G2_AString","G2_TString","G2_Seed", "G2_RE","Guide3","GC_G3",
-                                 "G3_AString","G3_TString","G3_Seed", "G3_RE",
-                                 "DistanceofGuide_AsPercentageofCDS","StartofGuideLocation")
-
+GuidesWithThresholds<-data.frame(GuidesWithThresholds)
 GuidesWithThresholds<-replace(GuidesWithThresholds,1,
-                              as.numeric(as.character(GuidesWithThresholds$ID))) 
+                              as.numeric(as.character(GuidesWithThresholds$ID)))
 
 
 #Subset all Guide possibilities 
@@ -1382,6 +1393,19 @@ GenesGainedFromLoweringThresholds<-length(unique(Re_FinalGuidesSelection$ID))
 GeneInfoDF<-data.frame(GenesLost)
 OverallGeneInfo<-data.frame(GeneInfoDF, 
                             GenesGainedFromLoweringThresholds) 
-write.csv(OverallGeneInfo, file="OverallGeneInfo.csv")
+write.csv(OverallGeneInfo, file="LoweredThresholdsGeneInfo.csv")
 
+```
+
+__Get Gene Info__
+Outputs a file that includes information about the parameters used and the number of genes with guides. 
+```{r}
+if (Run_Lowered_Thresholds==F) {
+  GenesGainedFromLoweringThresholds <- NA
+}
+
+GeneInfoDF<-data.frame(GenesLost)
+OverallGeneInfo<-data.frame(Parameters_Df, GeneInfoDF, 
+                            GenesGainedFromLoweringThresholds) 
+write.csv(OverallGeneInfo, file="OverallGeneInfo.csv")
 ```
