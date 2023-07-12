@@ -257,7 +257,7 @@ __Example__: Substitute the bolded information for the name of your FASTA file (
 InputGenome<- readDNAStringSet( __"mutansexamplefastafile.txt"__)
 ```{r, tidy=TRUE}
 InputGenome<- readDNAStringSet("E_coli_DH5alpha/E_coli_CP017100.txt")
-
+GenomeName <- "E_coli_DH5alpha"
 ```
 
 ##4. Define Putative Promoter Region 
@@ -344,12 +344,13 @@ Set the following:
  *__Test_RE__: Set to TRUE or FALSE, if you want to turn this function on or off
  *__RE_site__ If you want to remove sequences with a "bad seed", add the sequences here
  *__PAMless_guides__: Set to TRUE or FALSE, if you want to include guides made from any PAM site (FALSE will search for NGG guides only)
+ *__Find_Pairwise__: Set to TRUE or FALSE, if you want to find pairwise guides
 
 ```{r,tidy=TRUE}
 
 N <- 20 
 GC_Min<-.35
-DistanceAsPercentageofCDS<-.50
+DistanceAsPercentageofCDS<-.30
 GuidesPerGene<-10
 DistbtGuides<-100
 Test_bad_seed <- TRUE 
@@ -358,6 +359,7 @@ Test_RE <- FALSE
 RE_site <- "GGTCTC" 
 PAMless_guides <- TRUE
 
+Find_Pairwise <- TRUE
 ```
 
 
@@ -371,7 +373,9 @@ PAMless_guides <- TRUE
 
 ```{r,tidy=TRUE}
 # E. coli homologs from high confidence essential genes identified in Spoto et al. https://journals.asm.org/doi/10.1128/mbio.02632-22#tabS1 
-GenesToSelect<-c("NEB5A_00995", "NEB5A_00940", "NEB5A_19010", "NEB5A_16190", "NEB5A_20195", "NEB5A_04095", "NEB5A_17070")
+# c("NEB5A_00995", "NEB5A_00940", "NEB5A_19010", "NEB5A_16190", "NEB5A_20195", "NEB5A_04095", "NEB5A_17070")
+# ftsB gene (NEB5A_14055): no NGG guides found with GuideFinder after filtering for off-target and distance from TSS
+GenesToSelect<-c("NEB5A_14055")
 ManualSelection<-TRUE
 ```
 
@@ -416,7 +420,7 @@ if (Run_Lowered_Thresholds == F) {
   Parameters_Df[,c("Lower_GC_Min", "Lower_Dist_from_TSS", "Keep_A_String", "Keep_T_String", "Lower_Off_Target")] <- NA
 }
 
-write.csv(Parameters_Df, file = "Sepi5_try1_Parameters.csv")
+write.csv(Parameters_Df, file = "Ecoli_fullgenome_Parameters.csv")
 
 ```
 
@@ -783,7 +787,7 @@ CompleteGuidesList <- CompleteGuidesList %>%
 CompleteGuidesList<-replace(CompleteGuidesList,3,RemoveNGG(CompleteGuidesList$Guide1)) 
 CompleteGuidesList<-replace(CompleteGuidesList,5,RemoveNGG(CompleteGuidesList$Guide2))
 CompleteGuidesList<-replace(CompleteGuidesList,7,RemoveNGG(CompleteGuidesList$Guide3))
-write.csv(CompleteGuidesList, file="CompleteGuidesList.csv")
+write.csv(CompleteGuidesList, file="E_coli_DH5alpha/ftsB_CompleteGuidesList.csv")
 
 
 ```
@@ -831,7 +835,7 @@ CompleteGuidesList_Thresholds<-replace(CompleteGuidesList_Thresholds,9,
 CompleteGuidesList_Thresholds<-replace(CompleteGuidesList_Thresholds,15,
                                        RemoveNGG(CompleteGuidesList_Thresholds$Guide3))
 write.csv(CompleteGuidesList_Thresholds, 
-          file="CompleteGuidesList_Thresholds.csv", row.names = FALSE)
+          file="E_coli_DH5alpha/ftsB_CompleteGuidesList_Thresholds.csv", row.names = FALSE)
 
 #Filtering Guides
 # with dplyr
@@ -881,19 +885,14 @@ Matches<-fread("MatchGuides.blast")
 Matchesdf<-data.frame(Matches$V1)
 colnames(Matchesdf)<-"GuideID"
 
-split<-by( Matchesdf, Matchesdf$GuideID, invisible)
+Hits <- Matchesdf %>%
+  group_by(GuideID) %>%
+  summarize(hits = n()) %>%
+  select(hits, GuideID)
 
-Hits<-NULL
-for (i in 1:length(split)) {
-  testsplit<-data.frame(split[[i]])
-  hits<-nrow(testsplit)
-  mydata<-data.frame(hits,testsplit[1,1])
-  Hits<-rbind(Hits, mydata)
-}
+OneHit <-  Hits %>%
+  filter(hits == 1)
 
-colnames(Hits)<-c("hits", "GuideID")
-
-OneHit<-Hits[which(Hits$hits == 1),]
 GuidesWithoutOffTarget<-merge(OneHit, FilteredGuides1, by="GuideID")
 GuidesWithoutOffTarget<-GuidesWithoutOffTarget[order(GuidesWithoutOffTarget$ID, decreasing = F),]
 
@@ -903,7 +902,7 @@ GuidesHits <- GuidesHits %>%
   mutate(OffTarget = hits>1) %>%
   mutate(StartOfGuideLocation = FilteredGuides1$StartofGuideLocation)
 
-write.csv(GuidesHits, file="GuidesHitsBLAST.csv", row.names = F)
+write.csv(GuidesHits, file="E_coli_DH5alpha/ftsB_GuidesHitsBLAST.csv", row.names = F)
 
 #Create new column in GuidesWithoutOffTargets that contains the IDs as factor
 #must be factors to use function that splits data frame by IDs 
@@ -931,7 +930,7 @@ CompleteFilteredGuides<-replace(CompleteFilteredGuides,10,
                                 RemoveNGG(CompleteFilteredGuides$Guide2))
 CompleteFilteredGuides<-replace(CompleteFilteredGuides,16,
                                 RemoveNGG(CompleteFilteredGuides$Guide3))
-write.csv(CompleteFilteredGuides, file="CompleteFilteredGuides.csv")
+write.csv(CompleteFilteredGuides, file="E_coli_DH5alpha/ftsB_CompleteFilteredGuides.csv")
 
 ```
 
@@ -966,7 +965,7 @@ UseableGuides <- GuidesWithoutOffTarget %>%
   dplyr::select(Guide, GeneProduct, Location = StartofGuideLocation, ID)
 
 # write output for all useable guides
-write.csv(UseableGuides, "AllUseableGuides.csv")
+write.csv(UseableGuides, "E_coli_DH5alpha/ftsB_AllUseableGuides.csv")
 
 # Take number of guides per gene as specified in parameters
 # output TopHits_GuideSelection
@@ -996,7 +995,7 @@ TopHits_GuideSelection<-replace(TopHits_GuideSelection,1,
                                 RemoveNGG(TopHits_GuideSelection$Guide)) 
 
 # create output file
-write.csv(TopHits_GuideSelection, file = "TopHits_Guides.csv")
+write.csv(TopHits_GuideSelection, file = "E_coli_DH5alpha/ftsB_TopHits_Guides.csv")
 
 ```
 
@@ -1041,7 +1040,7 @@ Pairwise_GuideSelection2<-replace(Pairwise_GuideSelection2,5,
                                  RemoveNGG(Pairwise_GuideSelection2$Guide2))
 
 # Create output file
-write.csv(Pairwise_GuideSelection2, file = "Pairwise_Guides.csv")
+write.csv(Pairwise_GuideSelection2, file = "E_coli_DH5alpha/ftsB_Pairwise_Guides.csv")
 
 ```
 
@@ -1051,14 +1050,14 @@ Identifies genes that did not produce any usable Top Hits guides. This list is o
 ```{r, eval=FALSE,tidy=TRUE}
 
 # Identify genes that don't produce any Top Hits guides with the primary thresholds 
-GenesWithPairs<-length(unique(Pairwise_GuideSelection2$ID))
+GenesWithPairs<-ifelse(Find_Pairwise, length(unique(Pairwise_GuideSelection2$ID)), NA)
 GenesWithTopHits<-length(unique(TopHits_GuideSelection$ID))
 GenesLost<-data.frame(length(unique(CodingSequences$ID)),
                                    GenesWithPairs,
                                    GenesWithTopHits,
                                    length(unique(CodingSequences$ID))-GenesWithTopHits)
-names(GenesLost)<-c("Total # of Genes", "Genes With Guide Pairs", "Genes With Top Hits", "Genes W/O Top Hit ('GenesLost')")
-write.csv(GenesLost, file="GenesLostInformation.csv")
+names(GenesLost)<-c("Total_Genes", "Genes_With_Guide_Sites", "Genes_With_Guide_Pairs_Filtered", "Genes_With_Top_Hits_Filtered", "Genes_With_No_Hits")
+write.csv(GenesLost, file="E_coli_DH5alpha/Ecoli_fullgenome_GenesLostInformation.csv")
 
 #Which genes could not produce a guide using the defined filtering thresholds 
 GenesUsed_Tophits<-data.frame(list(unique(TopHits_GuideSelection$ID)))
@@ -1073,7 +1072,7 @@ GenesExcluded<-subset(MatchedGenes, InFinalList=="FALSE", select=c("ID", "InFina
 GenesWithoutGuide<-merge(GenesExcluded,CorrectedCodingSequences)
 
 #output to file
-write.csv(GenesWithoutGuide, file="GenesWithoutGuide.csv")
+write.csv(GenesWithoutGuide, file="E_coli_DH5alpha/Ecoli_fullgenome_GenesWithoutGuide.csv")
 
 
 # If you want to re-run genes that did not produce any PAIRED guides (previous code will re-run genes that did not produce any Top Hits guides)
@@ -1407,5 +1406,5 @@ if (Run_Lowered_Thresholds==F) {
 GeneInfoDF<-data.frame(GenesLost)
 OverallGeneInfo<-data.frame(Parameters_Df, GeneInfoDF, 
                             GenesGainedFromLoweringThresholds) 
-write.csv(OverallGeneInfo, file="OverallGeneInfo.csv")
+write.csv(OverallGeneInfo, file="E_coli_DH5alpha/Ecoli_fullgenome_OverallGeneInfo.csv")
 ```
