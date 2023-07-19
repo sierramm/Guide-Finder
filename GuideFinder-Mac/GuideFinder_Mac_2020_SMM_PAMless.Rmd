@@ -10,7 +10,7 @@ This program is capable of designing guides targeted to any number of genes in a
 Note: This file is adapted from the original GuideFinder R script to allow for designing guides that do not require a PAM site. 
 
 ##
-##1.Set Working Directory
+##1.Set Working Directory and Define Functions
 The working directory should be where your FASTA file is stored & where all files will output to 
 
 ```{r setup}
@@ -204,6 +204,19 @@ GuideDistance<-function (x) {Df2<-as.matrix(dist(x$Location))
   return(Df6)
   }
 
+SubtractProm<-function(x) {
+  x - PromoterRegion
+}
+
+AddProm<-function(x) { 
+  x + PromoterRegion 
+}
+
+#subset the promoter sequence 
+SubsetPromoter<-function (x) {
+  substr(x, 0, PromoterRegion)
+}
+
 # commented out because this code is repeated in optional scrambles chunk
 # not necessary here; also causes an issue in running
 #function to make scrambles 
@@ -250,36 +263,27 @@ ScrambleBlast<-'blastn -task blastn-short -query BLASTscrambles.fasta -db Genome
 
 
 ##3.Input FASTA File
-Add the name of the fasta file that contains the whole nucleotide sequence for your genome (not the file
-with the individual coding sequences); if this was a draft genome, be sure that you used the preprocessing
-script to concatenate the several contigs into one 
+Add the name of the fasta file that contains the whole nucleotide sequence for your genome (not the file with the individual coding sequences); if this was a draft genome, be sure that you used the preprocessing script to concatenate the several contigs into one.
+
+Input a name of your choosing for your genome. This information is used when generating the parameters file and as a file prefix to the output files. 
+
 __Example__: Substitute the bolded information for the name of your FASTA file (kept in working directory)  
 InputGenome<- readDNAStringSet( __"mutansexamplefastafile.txt"__)
+GenomeName <- __"Strep_mutans"__
 ```{r, tidy=TRUE}
 InputGenome<- readDNAStringSet("E_coli_DH5alpha/E_coli_CP017100.txt")
-GenomeName <- "E_coli_DH5alpha"
+
+GenomeName <- "test"
+
 ```
+
 
 ##4. Define Putative Promoter Region 
 Set the desired putative promoter region, for example, setting "PromoterRegion" to 50 if you want the Guide Finder to search 50 bp upstream of the transcription start site for each gene to identify guides. If you do not want Guide Finder to make guides from the promoter region, set to 0. Set between 0 - 100. Do not set above 100 bp. 
 
 If you are searching for PAMless guides, you will get a large number of guides per gene. Unless interested in the promoter region specifically or looking at a specific gene that did not have any guides, consider setting promoter region to 0 to limit the output.
 ```{r}
-
 PromoterRegion<-0
-
-SubtractProm<-function(x) {
-  x - PromoterRegion
-}
-
-AddProm<-function(x) { 
-  x + PromoterRegion 
-}
-
-#subset the promoter sequence 
-SubsetPromoter<-function (x) {
-  substr(x, 0, PromoterRegion)
-}
 
 ```
 
@@ -289,6 +293,7 @@ Set option to run program on a draft genome (see Guide Finder Protocol document 
 __For running program on a complete genome using GenBank Accession #, set CompleteGenone to TRUE; if using a draft genome set CompleteGenome to FALSE__
 ```{r,tidy=TRUE}
 CompleteGenome<- TRUE
+
 ```
 
 
@@ -327,7 +332,25 @@ names(NewCoordinatesDF)<-c("geneproduct","strand", "start", "end")  #change colu
 ```
 
 
-##6.Set Parameters for Guide Design
+##6.Manual Guide Selection  
+*Complete genomes only* If the user wants to run the program on a subset of genes from a draft genome, select these genes during the pre-processing script. Locus tags/unique identifiers differ between draft genome files.   
+
+* If creating guides for one gene or a subset of genes, set Manual Selection to TRUE. If whole-genome, set to FALSE
+* If Manual Selection is TRUE, add locus_tags (unique gene identifiers). 
+    + Can manually add any number desired. __Example format__ : Replace bolded information with the unique gene identifiers for 
+    each of the genes you want to select. GenesToSelect<-c( __"SMU_01"__, __"SMU_02"__, __"SMU_05"__)
+
+```{r,tidy=TRUE}
+# E. coli homologs from high confidence essential genes identified in Spoto et al. https://journals.asm.org/doi/10.1128/mbio.02632-22#tabS1 
+# c("NEB5A_00995", "NEB5A_00940", "NEB5A_19010", "NEB5A_16190", "NEB5A_20195", "NEB5A_04095", "NEB5A_17070")
+# ftsB gene (NEB5A_14055): no NGG guides found with GuideFinder after filtering for off-target and distance from TSS
+GenesToSelect<-c("NEB5A_14055")
+ManualSelection<-TRUE
+```
+
+
+
+##7.Set Parameters for Guide Design
 Change as desired. 
 Set the following:
 
@@ -345,9 +368,12 @@ Set the following:
  *__RE_site__ If you want to remove sequences with a "bad seed", add the sequences here
  *__PAMless_guides__: Set to TRUE or FALSE, if you want to include guides made from any PAM site (FALSE will search for NGG guides only)
  *__Find_Pairwise__: Set to TRUE or FALSE, if you want to find pairwise guides
+ * __Run_Lowered_Thresholds__ : If looking for guides with lowered thresholds, set to TRUE. Otherwise set to FALSE.
+ 
+ Note for PAMless guides: If running a PAMless search, you will likely get back a large number of guides. Pairwise selection will be very time-intensive, so you consider setting this to FALSE. Running with lowered thresholds is less time-intensive, but may not be needed. 
 
 ```{r,tidy=TRUE}
-
+# parameters for guides
 N <- 20 
 GC_Min<-.35
 DistanceAsPercentageofCDS<-.30
@@ -359,37 +385,20 @@ Test_RE <- FALSE
 RE_site <- "GGTCTC" 
 PAMless_guides <- TRUE
 
+# parameters for which chunks to run
 Find_Pairwise <- TRUE
+Run_Lowered_Thresholds <- FALSE
+
 ```
 
 
-##7.Manual Guide Selection  
-*Complete genomes only* If the user wants to run the program on a subset of genes from a draft genome, select these genes during the pre-processing script. Locus tags/unique identifiers differ between draft genome files.   
-
-* If creating guides for one gene or a subset of genes, set Manual Selection to TRUE. If whole-genome, set to FALSE
-* If Manual Selection is TRUE, add locus_tags (unique gene identifiers). 
-    + Can manually add any number desired. __Example format__ : Replace bolded information with the unique gene identifiers for 
-    each of the genes you want to select. GenesToSelect<-c( __"SMU_01"__, __"SMU_02"__, __"SMU_05"__)
-
-```{r,tidy=TRUE}
-# E. coli homologs from high confidence essential genes identified in Spoto et al. https://journals.asm.org/doi/10.1128/mbio.02632-22#tabS1 
-# c("NEB5A_00995", "NEB5A_00940", "NEB5A_19010", "NEB5A_16190", "NEB5A_20195", "NEB5A_04095", "NEB5A_17070")
-# ftsB gene (NEB5A_14055): no NGG guides found with GuideFinder after filtering for off-target and distance from TSS
-GenesToSelect<-c("NEB5A_14055")
-ManualSelection<-TRUE
-```
-
-***
 ## __OPTIONAL: Lower thresholds to find guides for genes that did not produce any with primary thresholds__  
 
-If not choosing to run lower thresholds, set Run_Lowered_Thresholds to FALSE and then run this chunk. 
-
-If running PAMless search, you will likely get back a large number of genes, so this option may not be necessary.
+If you are not choosing to run lower thresholds, no need to change these parameters or run this chunk.  
 
 __Enter lowered thresholds below__
 Change as desired: 
 
-* __Run_Lowered_Thresholds__ : If looking for guides with lowered thresholds, set to TRUE. Otherwise set to FALSE.
 * __GC_Min__ : GC minimum 
 * __DistanceAsPercentageofCDS__ : maximum distance from the transcription start site 
 * __KeepGuidesWithString__ : keep guides that contain a string of As (4 or more)? 
@@ -400,7 +409,6 @@ Change as desired:
     + Will search for a perfect match of the first 14 nt closest to the PAM site (rather than perfect match of 12 set as default in primary thresholds).
     + If a relaxed search is desired, set to TRUE. Otherwise, set to FALSE.
 ```{r,tidy=TRUE}
-Run_Lowered_Thresholds <- FALSE
 
 L_GC_Min<-.30
 L_DistanceAsPercentageofCDS<-.50
@@ -408,23 +416,12 @@ KeepGuidesWithString<-TRUE
 KeepGuidesWithString_T<-TRUE
 LowerOffTarget<-TRUE
 
-# Create file with parameters
-Parameters_Df <- data.frame(Genome = GenomeName, PAMless = PAMless_guides, Promoter_Length = PromoterRegion, Length_bp = N, 
-                            GC_min = GC_Min, Dist_from_TSS = DistanceAsPercentageofCDS, Dist_bw_Pairs = DistbtGuides,
-                            Test_Bad_Seed = Test_bad_seed, Bad_Seed_Seq = Bad_seed, Test_RE_Site = Test_RE,
-                            RE_Seq = RE_site, Lowered_Thresholds = Run_Lowered_Thresholds, Lower_GC_Min = L_GC_Min, 
-                            Lower_Dist_from_TSS = L_DistanceAsPercentageofCDS, Keep_A_String = KeepGuidesWithString, 
-                            Keep_T_String = KeepGuidesWithString_T, Lower_Off_Target = LowerOffTarget)
-
-if (Run_Lowered_Thresholds == F) {
-  Parameters_Df[,c("Lower_GC_Min", "Lower_Dist_from_TSS", "Keep_A_String", "Keep_T_String", "Lower_Off_Target")] <- NA
-}
-
-write.csv(Parameters_Df, file = "Ecoli_fullgenome_Parameters.csv")
-
 ```
 
 __Set the path__ 
+
+If you are not choosing to run lower thresholds, no need to change these parameters or run this chunk.
+
 Set the path to blastn for the system command for making BLAST database and running BLAST (on new guides made with lowered thresholds)  
 __Example__: Substitute bolded information in Re_RunBlast and Re_RunBlast_Lowered   
 Re_RunBlast<-' __/Users/spotom/Documents/Temp/Guide-Finder-master/GuideFinder-Mac/blastn__ -task blastn-short -query re_BLASTguides.fasta -db GenomeDatabase -outfmt 6 -num_threads 4 -dust no -soft_masking false -max_target_seqs 5 -word_size 13 -out re_MatchGuides.blast'  
@@ -436,10 +433,34 @@ Re_RunBlast_Lowered<-'blastn -task blastn-short -query re_BLASTguides.fasta -db 
 ```
 
 
+
 ## DO NOT EDIT BELOW THIS LINE
 ***
 __All user parameters are set above__   
 Code is commented so that the user may follow along, but no further user inputs or edits are needed. 
+
+__Create file with parameter data__
+Generates a file to store user parameters for this run.
+```{r,tidy=TRUE}
+
+# Create data frame with parameters set above
+Parameters_Df <- data.frame(Genome = GenomeName, PAMless = PAMless_guides, Promoter_Length = PromoterRegion, Length_bp = N, 
+                            GC_min = GC_Min, Dist_from_TSS = DistanceAsPercentageofCDS, Dist_bw_Pairs = DistbtGuides,
+                            Test_Bad_Seed = Test_bad_seed, Bad_Seed_Seq = Bad_seed, Test_RE_Site = Test_RE,
+                            RE_Seq = RE_site, Lowered_Thresholds = Run_Lowered_Thresholds, Lower_GC_Min = L_GC_Min, 
+                            Lower_Dist_from_TSS = L_DistanceAsPercentageofCDS, Keep_A_String = KeepGuidesWithString, 
+                            Keep_T_String = KeepGuidesWithString_T, Lower_Off_Target = LowerOffTarget)
+
+# set lowered threshold parameters to NA if not running lowered thresholds
+if (Run_Lowered_Thresholds == F) {
+  Parameters_Df[,c("Lower_GC_Min", "Lower_Dist_from_TSS", "Keep_A_String", "Keep_T_String", "Lower_Off_Target")] <- NA
+}
+
+# create output file
+write.csv(Parameters_Df, file = paste0(GenomeName, "_Parameters.csv"))
+
+```
+
 
 __For complete genomes, subsets genes if desired. IDs coordinates & alters them to include putative promoter sequence__  
 This chunk of code is only performed on complete genomes, since the program identifies the coding sequence + promoter region from complete genomes using coordinates from the annotated Genbank file. By telling the program only to run the following if CompleteGenome == TRUE, this part is skipped if the user is utilizing a draft genome (specified by "CompleteGenome<-False"", above). For complete genomes, creates NewCoordinatesDF (for draft genomes, this data frame was made during preprocessing)
@@ -787,7 +808,7 @@ CompleteGuidesList <- CompleteGuidesList %>%
 CompleteGuidesList<-replace(CompleteGuidesList,3,RemoveNGG(CompleteGuidesList$Guide1)) 
 CompleteGuidesList<-replace(CompleteGuidesList,5,RemoveNGG(CompleteGuidesList$Guide2))
 CompleteGuidesList<-replace(CompleteGuidesList,7,RemoveNGG(CompleteGuidesList$Guide3))
-write.csv(CompleteGuidesList, file="E_coli_DH5alpha/ftsB_CompleteGuidesList.csv")
+write.csv(CompleteGuidesList, file=paste0(GenomeName, "_CompleteGuidesList.csv"))
 
 
 ```
@@ -835,7 +856,7 @@ CompleteGuidesList_Thresholds<-replace(CompleteGuidesList_Thresholds,9,
 CompleteGuidesList_Thresholds<-replace(CompleteGuidesList_Thresholds,15,
                                        RemoveNGG(CompleteGuidesList_Thresholds$Guide3))
 write.csv(CompleteGuidesList_Thresholds, 
-          file="E_coli_DH5alpha/ftsB_CompleteGuidesList_Thresholds.csv", row.names = FALSE)
+          file=paste0(GenomeName, "_CompleteGuidesList_Thresholds.csv"), row.names = FALSE)
 
 #Filtering Guides
 # with dplyr
@@ -885,6 +906,7 @@ Matches<-fread("MatchGuides.blast")
 Matchesdf<-data.frame(Matches$V1)
 colnames(Matchesdf)<-"GuideID"
 
+# filtering BLAST hits
 Hits <- Matchesdf %>%
   group_by(GuideID) %>%
   summarize(hits = n()) %>%
@@ -902,7 +924,7 @@ GuidesHits <- GuidesHits %>%
   mutate(OffTarget = hits>1) %>%
   mutate(StartOfGuideLocation = FilteredGuides1$StartofGuideLocation)
 
-write.csv(GuidesHits, file="E_coli_DH5alpha/ftsB_GuidesHitsBLAST.csv", row.names = F)
+write.csv(GuidesHits, file=paste0(GenomeName, "_GuidesHitsBLAST.csv"), row.names = F)
 
 #Create new column in GuidesWithoutOffTargets that contains the IDs as factor
 #must be factors to use function that splits data frame by IDs 
@@ -930,7 +952,7 @@ CompleteFilteredGuides<-replace(CompleteFilteredGuides,10,
                                 RemoveNGG(CompleteFilteredGuides$Guide2))
 CompleteFilteredGuides<-replace(CompleteFilteredGuides,16,
                                 RemoveNGG(CompleteFilteredGuides$Guide3))
-write.csv(CompleteFilteredGuides, file="E_coli_DH5alpha/ftsB_CompleteFilteredGuides.csv")
+write.csv(CompleteFilteredGuides, file= paste0(GenomeName, "_CompleteFilteredGuides.csv"))
 
 ```
 
@@ -941,7 +963,8 @@ Final guide selection; this is based on length and meeting GC threshold; if long
 Output: 
 
 * Selects N number of guides for each gene where the max number of guides selected is designated by user (GuidesPerGene)  
-    + Selects N number of guides closest to the start of each gene 
+    + For non-PAMless search: selects N number of guides closest to the start of each gene 
+    + For a PAMless search: randomly selects N number of guides per gene from filtered list
     + TopHits_Guides
   
 ```{r, eval=FALSE}
@@ -965,7 +988,7 @@ UseableGuides <- GuidesWithoutOffTarget %>%
   dplyr::select(Guide, GeneProduct, Location = StartofGuideLocation, ID)
 
 # write output for all useable guides
-write.csv(UseableGuides, "E_coli_DH5alpha/ftsB_AllUseableGuides.csv")
+write.csv(UseableGuides, file = paste0(GenomeName, "_AllUseableGuides.csv"))
 
 # Take number of guides per gene as specified in parameters
 # output TopHits_GuideSelection
@@ -995,7 +1018,7 @@ TopHits_GuideSelection<-replace(TopHits_GuideSelection,1,
                                 RemoveNGG(TopHits_GuideSelection$Guide)) 
 
 # create output file
-write.csv(TopHits_GuideSelection, file = "E_coli_DH5alpha/ftsB_TopHits_Guides.csv")
+write.csv(TopHits_GuideSelection, file = paste0(GenomeName, "_TopHits_Guides.csv"))
 
 ```
 
@@ -1040,7 +1063,7 @@ Pairwise_GuideSelection2<-replace(Pairwise_GuideSelection2,5,
                                  RemoveNGG(Pairwise_GuideSelection2$Guide2))
 
 # Create output file
-write.csv(Pairwise_GuideSelection2, file = "E_coli_DH5alpha/ftsB_Pairwise_Guides.csv")
+write.csv(Pairwise_GuideSelection2, file = paste0(GenomeName, "_Pairwise_Guides.csv"))
 
 ```
 
@@ -1057,7 +1080,7 @@ GenesLost<-data.frame(length(unique(CodingSequences$ID)),
                                    GenesWithTopHits,
                                    length(unique(CodingSequences$ID))-GenesWithTopHits)
 names(GenesLost)<-c("Total_Genes", "Genes_With_Guide_Sites", "Genes_With_Guide_Pairs_Filtered", "Genes_With_Top_Hits_Filtered", "Genes_With_No_Hits")
-write.csv(GenesLost, file="E_coli_DH5alpha/Ecoli_fullgenome_GenesLostInformation.csv")
+write.csv(GenesLost, file=paste0(GenomeName, "_GenesLostInformation.csv"))
 
 #Which genes could not produce a guide using the defined filtering thresholds 
 GenesUsed_Tophits<-data.frame(list(unique(TopHits_GuideSelection$ID)))
@@ -1072,7 +1095,7 @@ GenesExcluded<-subset(MatchedGenes, InFinalList=="FALSE", select=c("ID", "InFina
 GenesWithoutGuide<-merge(GenesExcluded,CorrectedCodingSequences)
 
 #output to file
-write.csv(GenesWithoutGuide, file="E_coli_DH5alpha/Ecoli_fullgenome_GenesWithoutGuide.csv")
+write.csv(GenesWithoutGuide, file=paste0(GenomeName, "_GenesWithoutGuide.csv"))
 
 
 # If you want to re-run genes that did not produce any PAIRED guides (previous code will re-run genes that did not produce any Top Hits guides)
@@ -1167,7 +1190,7 @@ colnames(Scrambles_NoHits)<-c("Guide", "GeneProduct")
 
 
 #write out file 
-write.csv(file="Scrambles.csv", Scrambles_NoHits)
+write.csv(file=paste0(GenomeName, "_Scrambles.csv"), Scrambles_NoHits)
 
 
 ```
@@ -1233,17 +1256,17 @@ Complete_Genes_ReFilter<-replace(Complete_Genes_ReFilter, 9,
                                  RemoveNGG(as.character(Complete_Genes_ReFilter$Guide2)))
 Complete_Genes_ReFilter<-replace(Complete_Genes_ReFilter, 15, 
                                  RemoveNGG(as.character(Complete_Genes_ReFilter$Guide3)))
-write.csv(Genes_ReFilter,file="GuidesPossibleForExcludedGenes.csv")
+write.csv(Genes_ReFilter,file=paste0(GenomeName, "_GuidesPossibleForExcludedGenes.csv"))
 
 #Remove guides with string of As/Ts (if indicated)
 if (KeepGuidesWithString == FALSE) 
 {GenesReFilter1<-subset(GenesReFilter, 
-                          G3_AString == "NoneDetected", 
+                          G3_AString == F, 
                         select=ID:StartofGuideLocation)} else {GenesReFilter1<-GenesReFilter}
 
 if (KeepGuidesWithString_T == FALSE) 
 {GenesReFilter2<-subset(GenesReFilter1, 
-                          G3_TString == "NoneDetected", 
+                          G3_TString == F, 
                         select=ID:StartofGuideLocation)} else {GenesReFilter2<-GenesReFilter1}
 
 
@@ -1251,12 +1274,12 @@ if (KeepGuidesWithString_T == FALSE)
 # is the bad seed filter on? If TRUE, filter out by bad seed sequence 
 if (Test_bad_seed == TRUE) {
 GenesReFilter3<-subset(GenesReFilter2,
-                       G3_Seed == "NoneDetected", 
+                       G3_Seed == F, 
                         select=ID:StartofGuideLocation) } else {GenesReFilter3 <- GenesReFilter2}
 
 if (Test_RE == TRUE) {
 GenesReFilter4<-subset(GenesReFilter3,
-                       G3_RE == "NoneDetected", 
+                       G3_RE == F, 
                         select=ID:StartofGuideLocation) } else {GenesReFilter4 <- GenesReFilter3}
 
 
@@ -1269,12 +1292,9 @@ GenesReFilter4<-subset(GenesReFilter3,
 #GuidesWithThresholds$G3_RE<- NULL
 
 
-#Replace distance with N/A for those guides that don't meet distance threshold and filter out
-TestDistance<-lapply(GenesReFilter4$DistanceofGuide_AsPercentageofCDS,L_TestingDistance)
-GenesReFilter4$DistanceofGuide_AsPercentageofCDS<-TestDistance
-GenesReFilter5<-subset(GenesReFilter4, 
-                       DistanceofGuide_AsPercentageofCDS != "N/A", 
-                       select=ID:StartofGuideLocation)
+# filter out those that don't meet distance threshold
+GenesReFilter5 <- GenesReFilter4 %>%
+  filter(DistanceAsPercentageofCDS < L_DistanceAsPercentageofCDS)
 
 GenesReFilter5<-GenesReFilter5[!grepl("N", GenesReFilter5$Guide3),] #remove guides that contain "N"
 
@@ -1311,19 +1331,15 @@ if (LowerOffTarget == TRUE)
 Re_Matches<-fread("re_MatchGuides.blast")
 Re_Matchesdf<-data.frame(Re_Matches$V1)
 colnames(Re_Matchesdf)<-"GuideID"
-Re_split<-by(Re_Matchesdf, Re_Matchesdf$GuideID, invisible)
 
-Re_Hits<-NULL
-for (i in 1:length(Re_split)) {
-  testsplit<-data.frame(Re_split[[i]])
-  hits<-nrow(testsplit)
-  mydata<-data.frame(hits,testsplit[1,1])
-  Re_Hits<-rbind(Re_Hits, mydata)
-}
+Re_Hits <- Re_Matchesdf %>%
+  group_by(GuideID) %>%
+  summarize(hits = n()) %>%
+  select(hits, GuideID)
 
-colnames(Re_Hits)<-c("hits", "GuideID")
+Re_OneHit <-  Hits %>%
+  filter(hits == 1)
 
-Re_OneHit<-Re_Hits[which(Re_Hits$hits == 1),]
 Re_GuidesWithoutOffTarget<-merge(Re_OneHit, GenesReFilter5, by="GuideID")
 Re_GuidesWithoutOffTarget$ID<-unlist(Re_GuidesWithoutOffTarget$ID)
 Re_GuidesWithoutOffTarget<-
@@ -1379,20 +1395,13 @@ Re_FinalGuidesSelection<-replace(Re_FinalGuidesSelection,1,
 
 
 #output file 
-write.csv(Re_FinalGuidesSelection, file="GuidesUsingLowerThresholds.csv")
+write.csv(Re_FinalGuidesSelection, file=paste0(GenomeName, "_GuidesUsingLowerThresholds.csv"))
 
 GenesGainedFromLoweringThresholds<-length(unique(Re_FinalGuidesSelection$ID))
 
 
 #output information regarding how many genes still lost vs how many gained 
 #write.csv(GenesAfterRefiltering, file="InfoForGuidesUsingLowerThresholds.csv")
-
-#Overall Genes lost information 
-
-GeneInfoDF<-data.frame(GenesLost)
-OverallGeneInfo<-data.frame(GeneInfoDF, 
-                            GenesGainedFromLoweringThresholds) 
-write.csv(OverallGeneInfo, file="LoweredThresholdsGeneInfo.csv")
 
 ```
 
@@ -1406,5 +1415,6 @@ if (Run_Lowered_Thresholds==F) {
 GeneInfoDF<-data.frame(GenesLost)
 OverallGeneInfo<-data.frame(Parameters_Df, GeneInfoDF, 
                             GenesGainedFromLoweringThresholds) 
-write.csv(OverallGeneInfo, file="E_coli_DH5alpha/Ecoli_fullgenome_OverallGeneInfo.csv")
+write.csv(OverallGeneInfo, file=paste0(GenomeName, "_OverallGeneInfo.csv"))
+
 ```
