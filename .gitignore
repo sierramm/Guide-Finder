@@ -14,3 +14,5 @@
 *.xlsx
 GuideFinder-Mac/.RData
 GuideFinder-Mac/S_epi_5/.RData
+*.njs
+*.gz
