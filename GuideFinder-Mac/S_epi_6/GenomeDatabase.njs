@@ -6,7 +6,7 @@
   "description": "Sepi6concatenatedfastafile.txt",
   "number-of-letters": 2541610,
   "number-of-sequences": 1,
-  "last-updated": "2023-07-12T10:13:00",
+  "last-updated": "2023-07-19T11:55:00",
   "number-of-volumes": 1,
   "bytes-total": 673058,
   "bytes-to-cache": 636080,
