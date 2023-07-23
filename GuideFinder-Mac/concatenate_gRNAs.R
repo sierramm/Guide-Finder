@@ -15,20 +15,33 @@ Sepi6_NGG_guides <- Sepi6_NGG_guides %>%
 Sepi6_NAN_guides <- Sepi6_NAN_guides %>%
   mutate(Guide = substr(Guide,1,(nchar(Guide) - 3)))
 
+# put all guides in one data frame
 Sepi6_all_guides <- rbind(Sepi6_NGG_guides, Sepi6_NAN_guides,
-                          Sepi6_NGG_lowered_guides, Sepi6_NAN_lowered_guides) %>%
+                          Sepi6_NGG_lowered_guides, Sepi6_NAN_lowered_guides) %>% 
+  arrange(ID, Location) %>%
+  mutate(guide_num = c(1:length(ID))) %>%
   select(-...1)
+
+# checking for duplicates
+# duplicate guides could result from promoter sequence overlapping with gene upstream
+# duplicate combos of gene ID, PAM, and location could result from two guides beginning at same place and going in opposite directions
+Sepi6_NGG_guides %>% group_by(Guide) %>% summarize(count=n()) %>% arrange(desc(count)) %>% head()
+Sepi6_NGG_lowered_guides %>% group_by(Guide) %>% summarize(count=n()) %>% arrange(desc(count)) %>% head()
+
+duplicate_guides <- Sepi6_all_guides %>% group_by(Guide) %>% summarize(count=n()) %>% filter(count>1)
+duplicate_guides_all <- Sepi6_all_guides %>% filter(Guide %in% duplicate_guides$Guide) %>% arrange(ID, PAM, Location)
+
 
 # between 1 and 129 guides per gene
 num_guides_per_gene <- Sepi6_all_guides %>% group_by(GeneProduct, PAM) %>% summarize(count=n())
 
-# average of 20.05021 genes per guides
+# average of 20.05021 genes per guide
 mean_guides_per_gene <- mean(num_guides_per_gene$count)
 
 # Twist oligo prep - add primer/etc sequence around guide
 Sepi6_Twist_guides <- Sepi6_all_guides %>%
   mutate(twist_guide = paste0("GCTGTTTTGAATGGTCCCGGTCTCGAAAC", Guide, "GTTTTTGAGACCGAGCTAGAAATAGCAAGTTAAAATAAGGCTAGTCCGTTATCAACTTGAAAAAGTGG")) %>%
-  mutate(ID_loc = paste0(ID, "_", PAM, "_", Location)) %>%
+  mutate(ID_loc = paste0(guide_num, "_", PAM, "_", ID, "_", Location)) %>%
   select(SequenceName = ID_loc, Sequence = twist_guide)
 
 # Twist guide file
@@ -36,7 +49,7 @@ write.csv(Sepi6_Twist_guides, file="Sepi6_Twist_oligos.csv", row.names=F, quote=
 
 # Agilent oligo prep
 Sepi6_Agilent_guides <- Sepi6_all_guides %>%
-  mutate(ID_loc = paste0(ID, "_", PAM, "_", Location)) %>%
+  mutate(ID_loc = paste0(guide_num, "_", PAM, "_", ID, "_", Location)) %>%
   mutate(Replication = 1) %>%
   mutate(Sequence = paste0("GCTGTTTTGAATGGTCCCGGTCTCGAAAC", Guide, "GTTTTTGAGACCGAGCTAGAAATAGCAAGTTAAAATAAGGCTAGTCCGTTATCAACTTGAAAAAGTGG")) %>%
   select(SequenceName = ID_loc, Sequence, Replication)
