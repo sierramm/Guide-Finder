@@ -7,7 +7,7 @@ output:
 
 This program is capable of designing guides targeted to any number of genes in a bacterial genome. For complete genomes, input the GenBank accession number and fasta file. For draft genomes, input the coding sequence coordinates (identified using pre-processing scripts) and fasta file.  Set parameters for guide design, as indicated below. The program will identify genes that did not produce guides and will re-run them with lowered parameters if desired (see "OPTIONAL:" below). 
 
-Note: This file is adapted from the original GuideFinder R script for designing guides for a specific S. epidermidis (NIHLM031: https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=979214) 
+Note: This file is adapted from the original GuideFinder R script for designing guides for a specific S. epidermidis strain (NIHLM031: https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=979214) 
 Input genome file comes from running the pre-processing script. 
 
 Note: currently configured to search for NAN PAMless guides.
@@ -267,7 +267,7 @@ Set the desired putative promoter region, for example, setting "PromoterRegion" 
 If you are searching for PAMless guides, you will get a large number of guides per gene. Unless interested in the promoter region specifically or looking at a specific gene that did not have any guides, consider setting promoter region to 0 to limit the output.
 ```{r}
 
-PromoterRegion<-0
+PromoterRegion<-50
 
 SubtractProm<-function(x) {
   x - PromoterRegion
@@ -278,7 +278,7 @@ AddProm<-function(x) {
 }
 
 #subset the promoter sequence 
-SubsetPromoter<-function (x) {
+SubsetPromoter<-function(x) {
   substr(x, 0, PromoterRegion)
 }
 
@@ -495,6 +495,12 @@ Makes the coordinates numeric so they can be used to identify location in FASTA 
 NewCoordinatesDF$start<-as.numeric(as.character(NewCoordinatesDF$start)) 
 NewCoordinatesDF$end<-as.numeric(as.character(NewCoordinatesDF$end) )
 
+# ensure no gene coordiantes are past the end of the genome
+NewCoordinatesDF <- NewCoordinatesDF %>%
+  mutate(newend = case_when(end > length(InputGenome[[1]]) ~ length(InputGenome[[1]]),
+                         end <= length(InputGenome[[1]]) ~ end)) %>%
+  dplyr::select(geneproduct, strand, start, end=newend)
+
 #loop to pull all CDS given new coordinates 
 CodingSequences<-NULL 
 for (i in 1:nrow(NewCoordinatesDF)) { 
@@ -521,7 +527,7 @@ for (i in 1:nrow(CodingSequences)) {
   StrandType<-PlusorMinus(NewRow$Strand)
   #if the strand type is minus, will rev-comp the coding sequence to put in proper orientation  
   testing<-if (StrandType == "MINUS") 
-    { replace(NewRow,3, str_c(rev(comp(s2c(NewRow$CDS))), collapse = ""))} 
+    { replace(NewRow,3, str_c(rev(comp(s2c(NewRow$CDS), ambiguous = T)), collapse = ""))} 
   else {replace(NewRow,3,NewRow$CDS)} #if strand type is positive, do nothing
   CorrectedCodingSequences<-rbind(CorrectedCodingSequences, testing)
 }
@@ -616,7 +622,7 @@ MakeGuidesList <- function(r, N){
   Guide2<-substr(CodingSeq, Start, Start+N+1)
   Guide3<-substr(CodingSeq, Start, Start+N+2)
   LengthofCDS<-nchar(CodingSeq)
-  DistanceIntoCDS_AsPercentage<-Start/LengthofCDS
+  DistanceIntoCDS_AsPercentage<-(Start-PromoterRegion)/(LengthofCDS-PromoterRegion)
   ID<-ID
   data.frame(Guide1,Guide2, Guide3, NewDF3,
              Start,LengthofCDS,DistanceIntoCDS_AsPercentage,ID )
@@ -690,7 +696,7 @@ MakeGuidesList <- function(r, N){
   Guide2_P<-substr(CodingSeq, Start, Start+N+1)
   Guide3_P<-substr(CodingSeq, Start, Start+N+2)
   LengthofCDS<-nchar(CDS)
-  DistanceIntoCDS_AsPercentage<-Start/LengthofCDS
+  DistanceIntoCDS_AsPercentage<-(Start-PromoterRegion)/(LengthofCDS-PromoterRegion)
   ID<-ID
   data.frame(Guide1_P,Guide2_P, Guide3_P, NewDF3,DistanceIntoCDS_AsPercentage,ID, Start)
 }
@@ -885,8 +891,8 @@ colnames(Matchesdf)<-"GuideID"
 
 Hits <- Matchesdf %>%
   group_by(GuideID) %>%
-  summarize(hits = n()) %>%
-  select(hits, GuideID)
+  dplyr::summarize(hits = n()) %>%
+  dplyr::select(hits, GuideID)
 
 OneHit <-  Hits %>%
   filter(hits == 1)
@@ -1335,10 +1341,10 @@ colnames(Re_Matchesdf)<-"GuideID"
 
 Re_Hits <- Re_Matchesdf %>%
   group_by(GuideID) %>%
-  summarize(hits = n()) %>%
-  select(hits, GuideID)
+  dplyr::summarize(hits = n()) %>%
+  dplyr::select(hits, GuideID)
 
-Re_OneHit <-  Hits %>%
+Re_OneHit <-  Re_Hits %>%
   filter(hits == 1)
 
 # 
