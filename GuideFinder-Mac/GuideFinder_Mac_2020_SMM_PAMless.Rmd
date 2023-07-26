@@ -518,6 +518,12 @@ Makes the coordinates numeric so they can be used to identify location in FASTA 
 NewCoordinatesDF$start<-as.numeric(as.character(NewCoordinatesDF$start)) 
 NewCoordinatesDF$end<-as.numeric(as.character(NewCoordinatesDF$end) )
 
+#ensure that no gene coordinates are past the end of the genome
+NewCoordinatesDF <- NewCoordinatesDF %>%
+  mutate(newend = case_when(end > length(InputGenome[[1]]) ~ length(InputGenome[[1]]),
+                         end <= length(InputGenome[[1]]) ~ end)) %>%
+  dplyr::select(geneproduct, strand, start, end=newend)
+
 #loop to pull all CDS given new coordinates 
 CodingSequences<-NULL 
 for (i in 1:nrow(NewCoordinatesDF)) { 
@@ -544,7 +550,7 @@ for (i in 1:nrow(CodingSequences)) {
   StrandType<-PlusorMinus(NewRow$Strand)
   #if the strand type is minus, will rev-comp the coding sequence to put in proper orientation  
   testing<-if (StrandType == "MINUS") 
-    { replace(NewRow,3, str_c(rev(comp(s2c(NewRow$CDS))), collapse = ""))} 
+    { replace(NewRow,3, str_c(rev(comp(s2c(NewRow$CDS), ambiguous = T)), collapse = ""))} 
   else {replace(NewRow,3,NewRow$CDS)} #if strand type is positive, do nothing
   CorrectedCodingSequences<-rbind(CorrectedCodingSequences, testing)
 }
@@ -639,7 +645,7 @@ MakeGuidesList <- function(r, N){
   Guide2<-substr(CodingSeq, Start, Start+N+1)
   Guide3<-substr(CodingSeq, Start, Start+N+2)
   LengthofCDS<-nchar(CodingSeq)
-  DistanceIntoCDS_AsPercentage<-Start/LengthofCDS
+  DistanceIntoCDS_AsPercentage<-(Start-PromoterRegion)/(LengthofCDS-PromoterRegion)
   ID<-ID
   data.frame(Guide1,Guide2, Guide3, NewDF3,
              Start,LengthofCDS,DistanceIntoCDS_AsPercentage,ID )
@@ -713,7 +719,7 @@ MakeGuidesList <- function(r, N){
   Guide2_P<-substr(CodingSeq, Start, Start+N+1)
   Guide3_P<-substr(CodingSeq, Start, Start+N+2)
   LengthofCDS<-nchar(CDS)
-  DistanceIntoCDS_AsPercentage<-Start/LengthofCDS
+  DistanceIntoCDS_AsPercentage<-(Start-PromoterRegion)/(LengthofCDS-PromoterRegion)
   ID<-ID
   data.frame(Guide1_P,Guide2_P, Guide3_P, NewDF3,DistanceIntoCDS_AsPercentage,ID, Start)
 }
@@ -909,8 +915,8 @@ colnames(Matchesdf)<-"GuideID"
 # filtering BLAST hits
 Hits <- Matchesdf %>%
   group_by(GuideID) %>%
-  summarize(hits = n()) %>%
-  select(hits, GuideID)
+  dplyr::summarize(hits = n()) %>%
+  dplyr::select(hits, GuideID)
 
 OneHit <-  Hits %>%
   filter(hits == 1)
@@ -1334,10 +1340,10 @@ colnames(Re_Matchesdf)<-"GuideID"
 
 Re_Hits <- Re_Matchesdf %>%
   group_by(GuideID) %>%
-  summarize(hits = n()) %>%
-  select(hits, GuideID)
+  dplyr::summarize(hits = n()) %>%
+  dplyr::elect(hits, GuideID)
 
-Re_OneHit <-  Hits %>%
+Re_OneHit <-  Re_Hits %>%
   filter(hits == 1)
 
 Re_GuidesWithoutOffTarget<-merge(Re_OneHit, GenesReFilter5, by="GuideID")

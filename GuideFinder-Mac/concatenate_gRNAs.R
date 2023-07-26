@@ -60,8 +60,10 @@ duplicate_guides_all$Keep[take_out] <- FALSE
 # if genes are on minus strand, keep second guide
 for (i in c(1:length(duplicate_guides_all$ID))[c(T,F)]) {
   if (!is.na(duplicate_guides_all$Keep[i])) {next}
+  
   ID_first <- duplicate_guides_all$ID[i]
   strand <- Sepi6_allCDS_Prom[which(Sepi6_allCDS_Prom$ID==ID_first),"Strand"]
+  
   if (strand=="+") {
     duplicate_guides_all$Keep[i] <- T
     duplicate_guides_all$Keep[i+1] <- F
