@@ -3,27 +3,23 @@ Sepi6_NGG_guides <- read_csv("S_epi_6/Sepi6_NGG_Prom_AllUseableGuides.csv") %>%
   mutate(PAM = "NGG")
 Sepi6_NGG_lowered_guides <- read_csv("S_epi_6/Sepi6_NGG_Prom_GuidesUsingLowerThresholds.csv") %>%
   mutate(PAM = "NGG")
-Sepi6_NAN_guides <- read_csv("S_epi_6/Sepi6_NAN_Prom_1_AllUseableGuides.csv") %>%
-  mutate(PAM = "NAN")
-Sepi6_NAN_lowered_guides <- read_csv("S_epi_6/Sepi6_NAN_Prom_1_GuidesUsingLowerThresholds.csv") %>%
-  mutate(PAM = "NAN")
+# Sepi6_NAN_guides <- read_csv("S_epi_6/Sepi6_NAN_Prom_1_AllUseableGuides.csv") %>%
+#   mutate(PAM = "NAN")
+# Sepi6_NAN_lowered_guides <- read_csv("S_epi_6/Sepi6_NAN_Prom_1_GuidesUsingLowerThresholds.csv") %>%
+#   mutate(PAM = "NAN")
 
-guides_per_gene_NGG <- rbind(Sepi6_NGG_guides, Sepi6_NGG_lowered_guides) %>%
-  group_by(GeneProduct) %>% summarize(count = n())
-
-mean(guides_per_gene_NGG$count)
 
 # take out PAM sequence from guides (in all useable guides files)
 Sepi6_NGG_guides <- Sepi6_NGG_guides %>%
   mutate(Guide = substr(Guide,1,(nchar(Guide) - 3)))
 
-Sepi6_NAN_guides <- Sepi6_NAN_guides %>%
-  mutate(Guide = substr(Guide,1,(nchar(Guide) - 3)))
+# Sepi6_NAN_guides <- Sepi6_NAN_guides %>%
+#   mutate(Guide = substr(Guide,1,(nchar(Guide) - 3)))
 
 # put all guides in one data frame
 # give each guide its own ID
-Sepi6_all_guides <- rbind(Sepi6_NGG_guides, Sepi6_NAN_guides,
-                          Sepi6_NGG_lowered_guides, Sepi6_NAN_lowered_guides) %>% 
+# total 8209 guides; 2298 genes
+Sepi6_all_guides <- rbind(Sepi6_NGG_guides, Sepi6_NGG_lowered_guides) %>% 
   arrange(ID, Location) %>%
   mutate(guide_num = c(1:length(ID))) %>%
   select(-...1)
@@ -32,9 +28,8 @@ Sepi6_all_guides <- rbind(Sepi6_NGG_guides, Sepi6_NAN_guides,
 # duplicate guides most likely result from promoter sequence overlapping with gene upstream
 Sepi6_NGG_guides %>% group_by(Guide) %>% summarize(count=n()) %>% arrange(desc(count)) %>% head()
 Sepi6_NGG_lowered_guides %>% group_by(Guide) %>% summarize(count=n()) %>% arrange(desc(count)) %>% head()
-Sepi6_NAN_guides %>% group_by(Guide) %>% summarize(count=n()) %>% arrange(desc(count)) %>% head()
-Sepi6_NAN_lowered_guides %>% group_by(Guide) %>% summarize(count=n()) %>% arrange(desc(count)) %>% head()
 
+# 52 duplicate guides
 duplicate_guides <- Sepi6_all_guides %>% group_by(Guide) %>% summarize(count=n()) %>% filter(count>1)
 duplicate_guides_all <- Sepi6_all_guides %>% filter(Guide %in% duplicate_guides$Guide) %>% arrange(ID, PAM, Location)
 
@@ -42,7 +37,6 @@ duplicate_guides_all <- Sepi6_all_guides %>% filter(Guide %in% duplicate_guides$
 Sepi6_allCDS_Prom <- read_csv("S_epi_6/Sepi6_allCDS_andProm.csv")
 
 #Sepi6_completeGuidesList <- rbind(read_csv("S_epi_6/Sepi6_NGG_Prom_CompleteGuidesList.csv"), read_csv("S_epi_6/Sepi6_NAN_CompleteGuidesList.csv"))
-
 
 # sort through duplicate guides
 # creates a column to store T or F based on whether to keep the duplicate guide
@@ -52,7 +46,7 @@ duplicate_guides_all <- duplicate_guides_all %>%
 
 # filter out guides that shouldn't have passed off-target BLAST search
 # found by manually looking through list for which pairs of guides are not from neighboring genes
-take_out <- which(duplicate_guides_all$ID %in% c(1849, 1397, 1299, 2368))
+take_out <- which(duplicate_guides_all$ID %in% c(1849, 1397))
 duplicate_guides_all$Keep[take_out] <- FALSE
 
 # filter out guides where promoter overlaps with gene body of neighboring gene
@@ -73,21 +67,22 @@ for (i in c(1:length(duplicate_guides_all$ID))[c(T,F)]) {
   }
 }
 
-# filter out 46/88 duplicate guides
+# filter out 27/52 duplicate guides
 duplicates_to_drop <-  duplicate_guides_all[!duplicate_guides_all$Keep,]
 
 # filter out guides to drop
 # renumber guides
+# total 8182 guides
 Sepi6_all_guides_filtered <-  Sepi6_all_guides %>%
   filter(!(guide_num %in% duplicates_to_drop$guide_num)) %>%
   arrange(ID, Location) %>%
   mutate(guide_num = c(1:length(ID)))
 
-# between 1 and 129 guides per gene
-# 2353 genes represented
+# between 1 and 24 guides per gene
+# 2291 genes represented
 num_guides_per_gene <- Sepi6_all_guides_filtered %>% group_by(GeneProduct) %>% summarize(count=n())
 
-# average of 19.91373 genes per guide
+# average of 3.571366 genes per guide
 mean_guides_per_gene <- mean(num_guides_per_gene$count)
 
 # Twist oligo prep - add primer/etc sequence around guide
