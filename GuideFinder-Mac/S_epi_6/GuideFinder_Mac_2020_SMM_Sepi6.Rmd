@@ -92,7 +92,7 @@ L_CheckTheGC<- function(x) {
 # if searching for PAMless, locates any site. Otherwise, locates "CC" sites.
 FindCC<-function (Sequences) {
   if (PAMless_guides == T) {
-    str_locate_all(Sequences,".T.")
+    str_locate_all(Sequences,".")
   } else {
     str_locate_all(Sequences,"CC")
   }
@@ -102,7 +102,7 @@ FindCC<-function (Sequences) {
 # if searching for PAMless, locates any site. Otherwise, locates "GG" sites.
 FindGG<-function (Sequences) {
   if (PAMless_guides == T) {
-    str_locate_all(Sequences,".A.")
+    str_locate_all(Sequences,".")
   } else {
     str_locate_all(Sequences,"GG")
   }
@@ -258,7 +258,7 @@ __Example__: Substitute the bolded information for the name of your FASTA file (
 InputGenome<- readDNAStringSet( __"mutansexamplefastafile.txt"__)
 ```{r, tidy=TRUE}
 InputGenome<- readDNAStringSet("Sepi6concatenatedfastafile.txt")
-GenomeName <- "Staph_epi_6_NAN"
+GenomeName <- "Staph_epi_6_NNN"
 ```
 
 ##4. Define Putative Promoter Region 
@@ -418,7 +418,7 @@ if (Run_Lowered_Thresholds == F) {
   Parameters_Df[,c("Lower_GC_Min", "Lower_Dist_from_TSS", "Keep_A_String", "Keep_T_String", "Lower_Off_Target")] <- NA
 }
 
-write.csv(Parameters_Df, file = "Sepi6_NAN_Prom_Parameters.csv")
+write.csv(Parameters_Df, file = "Sepi6_PAMless_Prom_Parameters.csv")
 
 ```
 
@@ -791,7 +791,7 @@ CompleteGuidesList <- CompleteGuidesList %>%
 CompleteGuidesList<-replace(CompleteGuidesList,3,RemoveNGG(CompleteGuidesList$Guide1)) 
 CompleteGuidesList<-replace(CompleteGuidesList,5,RemoveNGG(CompleteGuidesList$Guide2))
 CompleteGuidesList<-replace(CompleteGuidesList,7,RemoveNGG(CompleteGuidesList$Guide3))
-write.csv(CompleteGuidesList, file="Sepi6_NAN_Prom_CompleteGuidesList.csv")
+write.csv(CompleteGuidesList, file="Sepi6_PAMless_Prom_CompleteGuidesList.csv")
 
 
 ```
@@ -839,7 +839,7 @@ CompleteGuidesList_Thresholds<-replace(CompleteGuidesList_Thresholds,9,
 CompleteGuidesList_Thresholds<-replace(CompleteGuidesList_Thresholds,15,
                                        RemoveNGG(CompleteGuidesList_Thresholds$Guide3))
 write.csv(CompleteGuidesList_Thresholds, 
-          file="Sepi6_NAN_Prom_CompleteGuidesList_Thresholds.csv", row.names = FALSE)
+          file="Sepi6_PAMless_Prom_CompleteGuidesList_Thresholds.csv", row.names = FALSE)
 
 #Filtering Guides
 # with dplyr
@@ -919,7 +919,7 @@ GuidesHits <- GuidesHits %>%
   mutate(OffTarget = hits>1) %>%
   mutate(StartOfGuideLocation = FilteredGuides1$StartofGuideLocation)
 
-write.csv(GuidesHits, file="Sepi6_NAN_Prom_GuidesHitsBLAST.csv", row.names = F)
+write.csv(GuidesHits, file="Sepi6_PAMless_Prom_GuidesHitsBLAST.csv", row.names = F)
 
 #Create new column in GuidesWithoutOffTargets that contains the IDs as factor
 #must be factors to use function that splits data frame by IDs 
@@ -947,7 +947,7 @@ CompleteFilteredGuides<-replace(CompleteFilteredGuides,10,
                                 RemoveNGG(CompleteFilteredGuides$Guide2))
 CompleteFilteredGuides<-replace(CompleteFilteredGuides,16,
                                 RemoveNGG(CompleteFilteredGuides$Guide3))
-write.csv(CompleteFilteredGuides, file="Sepi6_NAN_Prom_CompleteFilteredGuides.csv")
+write.csv(CompleteFilteredGuides, file="Sepi6_PAMless_Prom_CompleteFilteredGuides.csv")
 
 ```
 
@@ -982,7 +982,7 @@ UseableGuides <- GuidesWithoutOffTarget %>%
   dplyr::select(Guide, GeneProduct, Location = StartofGuideLocation, ID)
 
 # write output for all useable guides
-write.csv(UseableGuides, "Sepi6_NAN_Prom_AllUseableGuides.csv")
+write.csv(UseableGuides, "Sepi6_PAMless_Prom_AllUseableGuides.csv")
 
 # Take number of guides per gene as specified in parameters
 # output TopHits_GuideSelection
@@ -1016,7 +1016,7 @@ TopHits_GuideSelection<-replace(TopHits_GuideSelection,1,
                                 RemoveNGG(TopHits_GuideSelection$Guide)) 
 
 # create output file
-write.csv(TopHits_GuideSelection, file = "Sepi6_NAN_Prom_TopHits_Guides.csv")
+write.csv(TopHits_GuideSelection, file = "Sepi6_PAMless_Prom_TopHits_Guides.csv")
 
 ```
 
@@ -1061,7 +1061,7 @@ Pairwise_GuideSelection2<-replace(Pairwise_GuideSelection2,5,
                                  RemoveNGG(Pairwise_GuideSelection2$Guide2))
 
 # Create output file
-write.csv(Pairwise_GuideSelection2, file = "Sepi6_NAN_Prom_Pairwise_Guides.csv")
+write.csv(Pairwise_GuideSelection2, file = "Sepi6_PAMless_Prom_Pairwise_Guides.csv")
 
 ```
 
@@ -1080,7 +1080,7 @@ GenesLost<-data.frame(length(unique(CodingSequences$ID)),
                                    GenesWithTopHits,
                                    length(unique(CodingSequences$ID))-GenesWithTopHits)
 names(GenesLost)<-c("Total_Genes", "Genes_With_Guide_Sites", "Genes_With_Guide_Pairs_Filtered", "Genes_With_Top_Hits_Filtered", "Genes_With_No_Hits")
-write.csv(GenesLost, file="Sepi6_NAN_Prom_GenesLostInformation.csv")
+write.csv(GenesLost, file="Sepi6_PAMless_Prom_GenesLostInformation.csv")
 
 #Which genes could not produce a guide using the defined filtering thresholds 
 GenesUsed_Tophits<-data.frame(list(unique(TopHits_GuideSelection$ID)))
@@ -1095,7 +1095,7 @@ GenesExcluded<-subset(MatchedGenes, InFinalList=="FALSE", select=c("ID", "InFina
 GenesWithoutGuide<-merge(GenesExcluded,CorrectedCodingSequences)
 
 #output to file
-write.csv(GenesWithoutGuide, file="Sepi6_NAN_Prom_GenesWithoutGuide.csv")
+write.csv(GenesWithoutGuide, file="Sepi6_PAMless_Prom_GenesWithoutGuide.csv")
 
 
 # If you want to re-run genes that did not produce any PAIRED guides (previous code will re-run genes that did not produce any Top Hits guides)
@@ -1256,7 +1256,7 @@ Complete_Genes_ReFilter<-replace(Complete_Genes_ReFilter, 9,
                                  RemoveNGG(as.character(Complete_Genes_ReFilter$Guide2)))
 Complete_Genes_ReFilter<-replace(Complete_Genes_ReFilter, 15, 
                                  RemoveNGG(as.character(Complete_Genes_ReFilter$Guide3)))
-write.csv(Genes_ReFilter,file="Sepi6_NAN_Prom_GuidesPossibleForExcludedGenes.csv")
+write.csv(Genes_ReFilter,file="Sepi6_PAMless_Prom_GuidesPossibleForExcludedGenes.csv")
 
 #Remove guides with string of As/Ts (if indicated)
 if (KeepGuidesWithString == FALSE) 
@@ -1416,7 +1416,7 @@ Re_FinalGuidesSelection<-replace(Re_FinalGuidesSelection,1,
 
 
 #output file 
-write.csv(Re_FinalGuidesSelection, file="Sepi6_NAN_Prom_GuidesUsingLowerThresholds.csv")
+write.csv(Re_FinalGuidesSelection, file="Sepi6_PAMless_Prom_GuidesUsingLowerThresholds.csv")
 
 GenesGainedFromLoweringThresholds<-length(unique(Re_FinalGuidesSelection$ID))
 
@@ -1439,6 +1439,6 @@ if (Run_Lowered_Thresholds==F) {
 GeneInfoDF<-data.frame(GenesLost)
 OverallGeneInfo<-data.frame(Parameters_Df, GeneInfoDF, 
                             GenesGainedFromLoweringThresholds) 
-write.csv(OverallGeneInfo, file="Sepi6_NAN_Prom_OverallGeneInfo.csv")
+write.csv(OverallGeneInfo, file="Sepi6_PAMless_Prom_OverallGeneInfo.csv")
 ```
 
