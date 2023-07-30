@@ -1001,8 +1001,15 @@ UseableGuides <- GuidesWithoutOffTarget %>%
   filter(Guide != "DoNotUse") %>%
   dplyr::select(Guide, GeneProduct, Location = StartofGuideLocation, ID)
 
+# create PAM column and remove PAM sequence from guides
+UseableGuides1 <- UseableGuides %>%
+  mutate(PAM = ExtractPAM(Guide))
+
+UseableGuides1 <- replace(UseableGuides1,1, 
+                                RemoveNGG(UseableGuides$Guide)) 
+
 # write output for all useable guides
-write.csv(UseableGuides, file = paste0(GenomeName, "_AllUseableGuides.csv"))
+write.csv(UseableGuides1, file = paste0(GenomeName, "_AllUseableGuides.csv"))
 
 # Take number of guides per gene as specified in parameters
 # output TopHits_GuideSelection
