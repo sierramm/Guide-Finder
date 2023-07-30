@@ -1433,9 +1433,20 @@ if (Run_Lowered_Thresholds==F) {
   GenesGainedFromLoweringThresholds <- NA
 }
 
+# combine parameters information with amount of genes that produced guides
 GeneInfoDF<-data.frame(GenesLost)
 OverallGeneInfo<-data.frame(Parameters_Df, GeneInfoDF, 
-                            GenesGainedFromLoweringThresholds) 
+                            GenesGainedFromLoweringThresholds) %>% 
+  mutate(Total_Genes_With_Guides = Genes_With_Top_Hits_Filtered + GenesGainedFromLoweringThresholds)
+
+# add info about number of guides
+Useable_Guides_count <- length(UseableGuides1$ID)
+Useable_Guides_lowered_thresholds <- length(Re_FinalGuidesSelection$ID)
+
+OverallGeneInfo <- data.frame(OverallGeneInfo, Useable_Guides_count, Useable_Guides_lowered_thresholds) %>%
+  mutate(Total_Useable_Guides = Useable_Guides_count + Useable_Guides_lowered_thresholds)
+
+# create file with gene info 
 write.csv(OverallGeneInfo, file=paste0(GenomeName, "_OverallGeneInfo.csv"))
 
 ```
