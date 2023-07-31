@@ -67,7 +67,7 @@ If you already have a single-sequence file, skip this chuck and simply upload th
 
 ```{r, eval=FALSE, echo=FALSE}
 # S. epi 6 genome
-fastafile<-read.fasta(file="S_epi_6/GCA_000276245.1_ASM27624v1_genomic.fna.gz", as.string = TRUE) #read in fasta file
+fastafile<-read.fasta(file="S_epi_other_strains/NIHLM001_genomic.fna", as.string = TRUE) #read in fasta file
 
 seqnames<-names(fastafile) #subset seq names/IDs
 seq<-paste(fastafile) #subset sequences
@@ -85,7 +85,7 @@ names(NewFasta1)<-c("ID", "sequences") #rename
 
 SingleSeq<-paste(NewFasta1[1:nrow(NewFasta1),2], collapse = "") #paste together sequences 
 SingleSeqFasta<-DNAString(SingleSeq) #make into DNA string object 
-write.fasta(SingleSeqFasta,"SingleSequenceFastaFile",file="Sepi6concatenatedfastafile.txt") #write out to fasta file 
+write.fasta(SingleSeqFasta,"SingleSequenceFastaFile",file="NIHLM001_concatenatedfastafile.txt") #write out to fasta file 
 ```
 
 ****DO NOT RUN THIS NEXT CHUNK OF CODE UNTIL THE PREVIOUS CHUNK HAS COMPLETELY FINISHED RUNNING** 
@@ -112,11 +112,11 @@ RunBlast<-' __/Users/spotom/Documents/Temp/Guide-Finder-master/GuideFinder-Mac/b
 
 ```{r, eval=FALSE, echo=FALSE}
 #Input fasta file and change file path for MakeDatabase
-InputGenome<-readDNAStringSet("Sepi6concatenatedfastafile.txt", use.names = TRUE)
-MakeDatabase<-'~/ncbi-blast-2.14.0+/bin/makeblastdb -in Sepi6concatenatedfastafile.txt -dbtype nucl -out GenomeDatabaseEpi'
+InputGenome<-readDNAStringSet("S_epi_other_strains/NIHLM001_concatenatedfastafile.txt", use.names = TRUE)
+MakeDatabase<-'~/ncbi-blast-2.14.0+/bin/makeblastdb -in S_epi_other_strains/NIHLM001_concatenatedfastafile.txt -dbtype nucl -out GenomeDatabaseEpi'
 #Input CDS file
-CDS<- readDNAStringSet("S_epi_6/GCA_000276245.1_ASM27624v1_cds_from_genomic.fna", use.names = TRUE)
-RunBlast<-'~/ncbi-blast-2.14.0+/bin/blastn -task megablast -query S_epi_6/GCA_000276245.1_ASM27624v1_cds_from_genomic.fna -db GenomeDatabaseEpi -outfmt 6 -num_threads 4 -dust no -soft_masking false -max_target_seqs 1 -perc_identity 100 -out GenesMatch.blast'
+CDS<- readDNAStringSet("S_epi_other_strains/NIHLM001_cds_from_genomic.fna", use.names = TRUE)
+RunBlast<-'~/ncbi-blast-2.14.0+/bin/blastn -task megablast -query S_epi_other_strains/NIHLM001_cds_from_genomic.fna -db GenomeDatabaseEpi -outfmt 6 -num_threads 4 -dust no -soft_masking false -max_target_seqs 1 -perc_identity 100 -out GenesMatch.blast'
 
 ```
 
@@ -216,6 +216,6 @@ Converting to matrix in order to write .csv file.
 This file contains the new, modified coordinates (adjusted into proper format that the guide finder program requires)
 ```{r}
 CorrectedCoordinates<-as.matrix(CorrectedCoordinates)
-write.csv(CorrectedCoordinates, file = "Sepi6_NewCoordinates.csv", row.names = F )
+write.csv(CorrectedCoordinates, file = "S_epi_other_strains/NIHLM001_NewCoordinates.csv", row.names = F )
 ```
 
