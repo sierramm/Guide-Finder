@@ -106,7 +106,7 @@ FindCC<-function (Sequences) {
 FindGG<-function (Sequences) {
   if (PAM_site == "NNN") {
     str_locate_all(Sequences,".")
-  } else if (PAM_site = "NAN") {
+  } else if (PAM_site == "NAN") {
     str_locate_all(Sequences,".A.")
   } else if (PAM_site == "NGG") {
     str_locate_all(Sequences,"GG")
@@ -1097,6 +1097,7 @@ Identifies genes that did not produce any usable Top Hits guides. This list is o
 GenesWithPairs<-ifelse(Find_Pairwise, length(unique(Pairwise_GuideSelection2$ID)), NA)
 GenesWithTopHits<-length(unique(TopHits_GuideSelection$ID))
 GenesLost<-data.frame(length(unique(CodingSequences$ID)),
+                      length(unique(CompleteGuidesList$ID)),
                                    GenesWithPairs,
                                    GenesWithTopHits,
                                    length(unique(CodingSequences$ID))-GenesWithTopHits)
@@ -1356,7 +1357,7 @@ colnames(Re_Matchesdf)<-"GuideID"
 Re_Hits <- Re_Matchesdf %>%
   group_by(GuideID) %>%
   dplyr::summarize(hits = n()) %>%
-  dplyr::elect(hits, GuideID)
+  dplyr::select(hits, GuideID)
 
 Re_OneHit <-  Re_Hits %>%
   filter(hits == 1)
