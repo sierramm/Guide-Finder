@@ -36,8 +36,6 @@ duplicate_guides_all <- Sepi6_all_guides %>% filter(Guide %in% duplicate_guides$
 # read in CDS and promoter data - just need a data table that says whether genes are on plus or minus strand
 Sepi6_allCDS_Prom <- read_csv("S_epi_6/Sepi6_allCDS_andProm.csv")
 
-#Sepi6_completeGuidesList <- rbind(read_csv("S_epi_6/Sepi6_NGG_Prom_CompleteGuidesList.csv"), read_csv("S_epi_6/Sepi6_NAN_CompleteGuidesList.csv"))
-
 # sort through duplicate guides
 # creates a column to store T or F based on whether to keep the duplicate guide
 duplicate_guides_all <- duplicate_guides_all %>%
@@ -52,6 +50,7 @@ duplicate_guides_all$Keep[take_out] <- FALSE
 # filter out guides where promoter overlaps with gene body of neighboring gene
 # make sure duplicate guides is sorted by guide so that pairs are together
 # if genes are on minus strand, keep second guide
+# if genes are on plus strand, keep first guide
 for (i in c(1:length(duplicate_guides_all$ID))[c(T,F)]) {
   if (!is.na(duplicate_guides_all$Keep[i])) {next}
   
