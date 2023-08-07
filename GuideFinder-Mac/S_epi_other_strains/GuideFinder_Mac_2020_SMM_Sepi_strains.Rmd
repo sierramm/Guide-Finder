@@ -261,7 +261,7 @@ ScrambleBlast <- '__/Users/spotom/Documents/Temp/Guide-Finder-master/GuideFinder
 Similarly, set the path for (optional) scramble guide creation. Scramble guides are 20nt sequences without a match to anywhere in your input genome and can act as a negative control for your experiments. For ScrambleBlast, only change the path to the location of BLASTn on your computer (should be same as "RunBlast" path). (The input and output file names, i.e. BLASTscrambles.fasta and MatchScrambles.blast SHOULD NOT be changed)
 
 ```{r}
-MakeDatabase<-'~/ncbi-blast-2.14.0+/bin/makeblastdb -in NIHLM001_concatenatedfastafile.txt -dbtype nucl -out GenomeDatabase'
+MakeDatabase<-'~/ncbi-blast-2.14.0+/bin/makeblastdb -in 3B05_concatenatedfastafile.txt -dbtype nucl -out GenomeDatabase'
 
 RunBlast<-'~/ncbi-blast-2.14.0+/bin/blastn -task blastn-short -query BLASTguides.fasta -db GenomeDatabase -outfmt 6 -num_threads 4 -dust no -soft_masking false -max_target_seqs 5 -word_size 13 -out MatchGuides.blast'
 
@@ -279,9 +279,9 @@ __Example__: Substitute the bolded information for the name of your FASTA file (
 InputGenome<- readDNAStringSet( __"mutansexamplefastafile.txt"__)
 GenomeName <- __"Strep_mutans"__
 ```{r, tidy=TRUE}
-InputGenome<- readDNAStringSet("NIHLM001_concatenatedfastafile.txt")
+InputGenome<- readDNAStringSet("3B05_concatenatedfastafile.txt")
 
-GenomeName <- "NIHLM001"
+GenomeName <- "3B05_NNN"
 
 ```
 
@@ -327,7 +327,7 @@ NewCoordinatesDF<-fread( __"DrafGenome_NewCoordinates.csv"__ )
 ```{r,tidy=TRUE}
 
 if (CompleteGenome == FALSE) {
-CoordinatesDF<-fread("NIHLM001_NewCoordinates.csv")
+CoordinatesDF<-fread("3B05_NewCoordinates.csv")
 NewCoordinatesDF<-NULL
 for (i in 1:nrow(CoordinatesDF)) { 
   WorkingRow<-CoordinatesDF[i,]
@@ -391,7 +391,7 @@ Test_bad_seed <- TRUE
 Bad_seed <- "ACCCA"  
 Test_RE <- FALSE 
 RE_site <- "GGTCTC" 
-PAM_site <- "NGG"
+PAM_site <- "NAN"
 
 # parameters for which chunks to run
 Find_Pairwise <- FALSE
