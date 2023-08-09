@@ -7,7 +7,7 @@ output:
 
 This program is capable of designing guides targeted to any number of genes in a bacterial genome. For complete genomes, input the GenBank accession number and fasta file. For draft genomes, input the coding sequence coordinates (identified using pre-processing scripts) and fasta file.  Set parameters for guide design, as indicated below. The program will identify genes that did not produce guides and will re-run them with lowered parameters if desired (see "OPTIONAL:" below). 
 
-Note: This file is adapted from the original GuideFinder R script to allow for designing guides with NAN or NGG PAM sites. 
+Note: This file is adapted from the original GuideFinder R script for running with various S. epidermidis strains for guides with NGG, NAN, or NNN PAM sites.  
 
 ##
 ##1.Set Working Directory and Define Functions

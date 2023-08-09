@@ -104,11 +104,11 @@ L_CheckTheGC<- function(x) {
 
 #function to find PAM site
 FindCC<-function (Sequences) 
-{str_locate_all(Sequences,".")}
+{str_locate_all(Sequences,"CC")}
 
 #function to find PAM site (promoter sequence only)
 FindGG<-function (Sequences) 
-{str_locate_all(Sequences,".")}
+{str_locate_all(Sequences,"GG")}
 
 
 #function to filter based on distance into CDS 

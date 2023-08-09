@@ -3,6 +3,12 @@
 
 Being updated (Summer 2023) with further development to use for selecting PAMless guides. 
 
+These updates, found in GuideFinder_Mac_2020_SMM_PAMless, allows for a selection of 
+NGG, NAN, or NNN PAM sites for guide design. There are also some small fixes and 
+streamlining to guide filtering, as well as additional output files. No changes were 
+made to the pre-processing script.
+
+
 # Guide-Finder
 Pan-bacterial, genome-wide guide designer 
 

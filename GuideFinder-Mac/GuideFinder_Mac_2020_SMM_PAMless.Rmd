@@ -281,7 +281,7 @@ GenomeName <- __"Strep_mutans"__
 ```{r, tidy=TRUE}
 InputGenome<- readDNAStringSet("E_coli_DH5alpha/E_coli_CP017100.txt")
 
-GenomeName <- "test"
+GenomeName <- "E_coli"
 
 ```
 
@@ -376,7 +376,7 @@ Set the following:
  *__RE_site__ If you want to remove sequences with a "bad seed", add the sequences here
  *__PAM_site__: Set to "NGG", "NAN", or "NNN". For a completely PAMless search, choose "NNN".
  *__Find_Pairwise__: Set to TRUE or FALSE, if you want to find pairwise guides
- * __Run_Lowered_Thresholds__ : If looking for guides with lowered thresholds, set to TRUE. Otherwise set to FALSE.
+ * __Run_Lowered_Thresholds__ : If looking for guides with lowered thresholds for genes that do not produce guides, set to TRUE. Otherwise set to FALSE.
  
  Note for PAMless guides: If running a PAMless search (NAN or NNN), you will likely get back a large number of guides. Pairwise selection will be very time-intensive, so  consider setting this to FALSE. Running with lowered thresholds is less time-intensive, but may not be needed. 
 
